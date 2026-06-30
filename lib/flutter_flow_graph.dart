@@ -7,3 +7,4 @@ export 'src/models/flow_connection.dart';
 export 'src/models/flow_node.dart';
 export 'src/models/flow_snapshot.dart';
 export 'src/models/global_value.dart';
+export 'src/controllers/flow_controller.dart';
