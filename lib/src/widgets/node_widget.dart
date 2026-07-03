@@ -8,6 +8,7 @@ import '../models/block_config.dart';
 import '../models/block_test.dart';
 import '../models/flow_node.dart';
 import 'block_test_toast.dart';
+import 'port_widget.dart';
 
 /// 刪除按鈕直徑。
 const double _deleteButtonSize = 20;
@@ -568,10 +569,186 @@ class NodeWidget extends StatelessWidget {
         return false;
     }
   }
-  List<Widget> _buildPorts(BuildContext context, Color color) {
-    return [];
-  }
 
+  List<Widget> _buildPorts(BuildContext context, Color color) {
+    final widgets = <Widget>[];
+    final r = NodeMetrics.portRadius(_fs);
+    final inset = NodeMetrics.portInset(_fs);
+
+    for (var i = 0; i < node.inputs.length; i++) {
+      final port = node.inputs[i];
+      final y =
+          NodeMetrics.headerHeight(_fs) +
+          NodeMetrics.configHeight(_fs) +
+          _currentRowOffset +
+          i * NodeMetrics.rowHeight(_fs) +
+          NodeMetrics.rowHeight(_fs) / 2;
+      widgets.add(
+        Positioned(
+          left: inset - r,
+          top: y - r,
+          child: PortWidget(
+            nodeId: node.id,
+            port: port,
+            controller: controller,
+            color: color,
+            isTarget:
+                controller.draftTargetNodeId == node.id &&
+                controller.draftTargetPortId == port.id,
+          ),
+        ),
+      );
+      if (isDynamicInputType(node.type)) {
+        final hasBox = _portHasInputBox(node, port.id);
+        final showInput =
+            !hasBox || !controller.shouldHideInputBox(node.id, port.id);
+        widgets.add(
+          Positioned(
+            left: inset + r + 4,
+            top: y - 11,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(port.label, style: _portLabelStyle),
+                if (hasBox) ...[
+                  const SizedBox(width: 6),
+                  if (showInput)
+                    _CalcInputField(
+                      controller: controller,
+                      nodeId: node.id,
+                      portId: port.id,
+                      initialValue: node.config.inputValues[port.id] ?? '',
+                      onExitTextInput: onExitTextInput,
+                    )
+                  else
+                    Text(
+                      '連線',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: color.withValues(alpha: 0.7),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        );
+      } else {
+        widgets.add(
+          Positioned(
+            left: inset + r + 4,
+            top: y - 9,
+            child: Text(port.label, style: _portLabelStyle),
+          ),
+        );
+      }
+    }
+
+    // 動態入口節點：未展開到上限時，末尾渲染「新增點」。
+    if (isDynamicInputType(node.type) &&
+        node.inputs.length < maxDynamicInputs(node.type)) {
+      final addY =
+          NodeMetrics.headerHeight(_fs) +
+          NodeMetrics.configHeight(_fs) +
+          _currentRowOffset +
+          node.inputs.length * NodeMetrics.rowHeight(_fs) +
+          NodeMetrics.rowHeight(_fs) / 2;
+      final addTarget =
+          controller.draftTargetNodeId == node.id &&
+          controller.draftTargetPortId == addPointPortId;
+      widgets.add(
+        Positioned(
+          left: inset - r - 4,
+          top: addY - r - 4,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              controller.selectNode(node.id);
+              controller.addDynamicInput(node.id);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Tooltip(
+                message: '點擊新增輸入埠（可直接填數值當成常數使用）；連線到此點也會自動新增',
+                child: AnimatedScale(
+                  scale: addTarget ? 1.35 : 1.0,
+                  duration: const Duration(milliseconds: 120),
+                  child: Container(
+                    width: NodeMetrics.portRadius(_fs) * 2,
+                    height: NodeMetrics.portRadius(_fs) * 2,
+                    decoration: BoxDecoration(
+                      color: addTarget
+                          ? color.withValues(alpha: 0.15)
+                          : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: addTarget ? Colors.white : color,
+                        width: addTarget ? 3 : 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: addTarget
+                              ? color.withValues(alpha: 0.55)
+                              : Colors.black26,
+                          blurRadius: addTarget ? 8 : 2,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.add,
+                      size: 10,
+                      color: addTarget ? Colors.white : color,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (var i = 0; i < node.outputs.length; i++) {
+      final port = node.outputs[i];
+      final y =
+          NodeMetrics.headerHeight(_fs) +
+          NodeMetrics.configHeight(_fs) +
+          _currentRowOffset +
+          i * NodeMetrics.rowHeight(_fs) +
+          NodeMetrics.rowHeight(_fs) / 2;
+      widgets.add(
+        Positioned(
+          left: NodeMetrics.width(_fs) - inset - r,
+          top: y - r,
+          child: PortWidget(
+            nodeId: node.id,
+            port: port,
+            controller: controller,
+            color: color,
+            onTap: () {
+              controller.selectNode(node.id);
+              _openConfig(context);
+            },
+          ),
+        ),
+      );
+      widgets.add(
+        Positioned(
+          right: inset + r + 4,
+          top: y - 9,
+          child: Text(
+            port.label,
+            style: TextStyle(
+              color: Colors.black.withValues(alpha: 0.6),
+              fontSize: 11 * _fs,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return widgets;
+  }
 }
 
 /// 「目前值／目前結果」行：展示節點的目前求值結果。
