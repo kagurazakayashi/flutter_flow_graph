@@ -213,6 +213,19 @@ class _NodeCanvasState extends State<NodeCanvas> {
                   Positioned.fill(
                     child: CustomPaint(painter: GridPainter(controller)),
                   ),
+                  // 連線層（畫布局部座標）。
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: ConnectionPainter(controller),
+                    ),
+                  ),
+                  // 節點（世界座標 -> 畫布局部座標）。
+                  for (final node in controller.nodes.values)
+                    NodeWidget(
+                      node: node,
+                      controller: controller,
+                      onExitTextInput: widget.onExitTextInput,
+                    ),
                 ],
               ),
             ),
@@ -222,6 +235,60 @@ class _NodeCanvasState extends State<NodeCanvas> {
     );
   }
 
+
+
+  /// 從面板拖曳節點到畫布：在釋放位置建立節點，節點中心點跟隨滑鼠指標。
+  void _onBlockDropped(DragTargetDetails<BlockType> details) {
+    final world = controller.screenToWorld(details.offset);
+    final probe = FlowNode(
+      id: '_probe',
+      type: details.data,
+      position: Offset.zero,
+    );
+    final pos =
+        world -
+        Offset(
+          NodeMetrics.width(controller.fontScale) / 2,
+          probe.height(controller.fontScale) / 2,
+        );
+    final node = controller.addNode(details.data, pos);
+    if (node == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('每個畫布只能有一個觸發節點（流程起點）'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      return;
+    }
+
+    if (widget.settings?.showZoomHint ?? false) {
+      _showDebugSnackBar(
+        '拖曳入畫布:\n'
+        'feedback全域: (${details.offset.dx.toStringAsFixed(0)}, ${details.offset.dy.toStringAsFixed(0)})\n'
+        '節點(世界): (${pos.dx.toStringAsFixed(0)}, ${pos.dy.toStringAsFixed(0)})',
+      );
+    }
+  }
+
+  void _showDebugSnackBar(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 8),
+          content: Text(text),
+          action: SnackBarAction(
+            label: '複製',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+            },
+          ),
+        ),
+      );
+  }
   void _onPointerSignal(Object event) {
     // 處理滑鼠滾輪縮放。
     // Flutter 3.38+ 中 PointerSignalEvent 已移除，改用動態屬性存取。
@@ -265,9 +332,74 @@ class _NodeCanvasState extends State<NodeCanvas> {
       controller.panBy(details.focalPointDelta);
     }
   }
+
   void _onTapUp(TapUpDetails details) {
-    controller.clearSelection();
+    final world = controller.screenToWorld(details.globalPosition);
+    final connId = _hitTestConnection(world);
+    if (connId != null) {
+      widget.onExitTextInput?.call();
+      controller.selectConnection(connId);
+    } else {
+      controller.clearSelection();
+    }
   }
 
+  void _onSecondaryTapUp(TapUpDetails details) {
+    final world = controller.screenToWorld(details.globalPosition);
+    final connId = _hitTestConnection(world);
+    if (connId != null) {
+      controller.selectConnection(connId);
+      _showConnectionMenu(context, details.globalPosition, connId);
+    }
+  }
 
+  Future<void> _showConnectionMenu(
+    BuildContext context,
+    Offset globalPos,
+    String connId,
+  ) async {
+    final result = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        globalPos.dx,
+        globalPos.dy,
+        globalPos.dx,
+        globalPos.dy,
+      ),
+      items: const [
+        PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18),
+              SizedBox(width: 8),
+              Text('刪除'),
+            ],
+          ),
+        ),
+      ],
+    );
+    if (result == 'delete') {
+      controller.removeConnection(connId);
+    }
+  }
+
+  String? _hitTestConnection(Offset worldPos) {
+    const threshold = 12.0;
+    String? bestId;
+    var bestDist = double.infinity;
+
+    for (final conn in controller.connections) {
+      final from = controller.portPosition(conn.fromNodeId, conn.fromPortId);
+      final to = controller.portPosition(conn.toNodeId, conn.toPortId);
+      for (final p in bezierPoints(from, to)) {
+        final d = (p - worldPos).distance;
+        if (d < threshold && d < bestDist) {
+          bestDist = d;
+          bestId = conn.id;
+        }
+      }
+    }
+    return bestId;
+  }
 }
