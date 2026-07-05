@@ -223,6 +223,101 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  /// 指定埠在世界座標系中的圓心位置。
+  Offset portPosition(String nodeId, String portId) {
+    final node = nodes[nodeId];
+    if (node == null) return Offset.zero;
+    return node.position + node.portOffset(portId, fontScale);
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // 連線操作
+  // ---------------------------------------------------------------------------
+
+  /// 開始拖線（從輸出埠拖出）。
+  void beginDraft(String nodeId, String portId) {
+    _draftFromNodeId = nodeId;
+    _draftFromPortId = portId;
+    _draftEnd = portPosition(nodeId, portId);
+    notifyListeners();
+  }
+
+
+  /// 更新拖線終點（世界座標）。
+  void updateDraft(Offset world) {
+    _draftEnd = world;
+    notifyListeners();
+  }
+
+
+  /// 結束拖線：若命中輸入埠則建立連線。
+  void endDraft(Offset world) {
+    if (_draftFromNodeId == null || _draftFromPortId == null) {
+      cancelDraft();
+      return;
+    }
+    final target = _hitTestInputPort(world);
+    if (target != null) {
+      _addConnection(_draftFromNodeId!, _draftFromPortId!, target.nodeId, target.portId);
+    }
+    cancelDraft();
+  }
+
+
+  /// 取消拖線。
+  void cancelDraft() {
+    _draftFromNodeId = null;
+    _draftFromPortId = null;
+    _draftEnd = null;
+    draftTargetNodeId = null;
+    draftTargetPortId = null;
+    notifyListeners();
+  }
+
+  /// 建立連線。
+  void _addConnection(String fromNodeId, String fromPortId, String toNodeId, String toPortId) {
+    connections.add(FlowConnection(
+      id: _nextId('conn'),
+      fromNodeId: fromNodeId,
+      fromPortId: fromPortId,
+      toNodeId: toNodeId,
+      toPortId: toPortId,
+    ));
+    _isDirty = true;
+    notifyListeners();
+  }
+
+  /// 刪除連線。
+  void removeConnection(String id) {
+    connections.removeWhere((c) => c.id == id);
+    if (selectedConnectionId == id) {
+      selectedConnectionId = null;
+    }
+    _isDirty = true;
+    notifyListeners();
+  }
+
+  /// 命中測試：世界座標 [world] 是否落在某個輸入埠的範圍內。
+  ({String nodeId, String portId})? _hitTestInputPort(Offset world) {
+    const threshold = 24.0;
+    ({String nodeId, String portId})? best;
+    var bestDist = double.infinity;
+
+    for (final node in nodes.values) {
+      for (final port in node.inputs) {
+        final center = node.position + node.portOffset(port.id, fontScale);
+        final d = (center - world).distance;
+        if (d < threshold && d < bestDist) {
+          bestDist = d;
+          best = (nodeId: node.id, portId: port.id);
+        }
+      }
+    }
+    return bestDist < threshold ? best : null;
+  }
+
 // 釋放資源
   // ---------------------------------------------------------------------------
 

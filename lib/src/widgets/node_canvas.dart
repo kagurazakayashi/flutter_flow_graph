@@ -81,6 +81,34 @@ class ConnectionPainter extends CustomPainter {
       canvas.drawPath(path, paint);
     }
 
+    // 拖線預覽。
+    final draftFromNode = controller.draftFromNodeId;
+    final draftFromPort = controller.draftFromPortId;
+    final draftEnd = controller.draftEnd;
+    if (draftFromNode != null && draftFromPort != null && draftEnd != null) {
+      final from = controller.worldToCanvas(
+        controller.portPosition(draftFromNode, draftFromPort),
+      );
+      final draftScreen = controller.worldToCanvas(draftEnd);
+      final paint = Paint()
+        ..color = const Color(0xFF1565C0)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+
+      final path = Path();
+      final pts = bezierPoints(from, draftScreen);
+      for (var i = 0; i < pts.length - 1; i++) {
+        if (i.isEven) {
+          path.moveTo(pts[i].dx, pts[i].dy);
+        } else {
+          path.lineTo(pts[i].dx, pts[i].dy);
+        }
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
   Path _connectionPath(Offset from, Offset to) {
     final dx = math.max((to.dx - from.dx).abs() * 0.5, 50.0);
     return Path()
