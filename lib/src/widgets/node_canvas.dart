@@ -225,36 +225,39 @@ class _NodeCanvasState extends State<NodeCanvas> {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        return ClipRect(
-          key: _canvasKey,
-          child: Listener(
-            onPointerSignal: _onPointerSignal,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapUp: _onTapUp,
-              onScaleStart: _onScaleStart,
-              onScaleUpdate: _onScaleUpdate,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // 網格背景（畫布局部座標）。
-                  Positioned.fill(
-                    child: CustomPaint(painter: GridPainter(controller)),
-                  ),
-                  // 連線層（畫布局部座標）。
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: ConnectionPainter(controller),
+        return MouseRegion(
+          cursor: _currentCursor(),
+          child: ClipRect(
+            key: _canvasKey,
+            child: Listener(
+              onPointerSignal: _onPointerSignal,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: _onTapUp,
+                onScaleStart: _onScaleStart,
+                onScaleUpdate: _onScaleUpdate,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // 網格背景（畫布局部座標）。
+                    Positioned.fill(
+                      child: CustomPaint(painter: GridPainter(controller)),
                     ),
-                  ),
-                  // 節點（世界座標 -> 畫布局部座標）。
-                  for (final node in controller.nodes.values)
-                    NodeWidget(
-                      node: node,
-                      controller: controller,
-                      onExitTextInput: widget.onExitTextInput,
+                    // 連線層（畫布局部座標）。
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: ConnectionPainter(controller),
+                      ),
                     ),
-                ],
+                    // 節點（世界座標 -> 畫布局部座標）。
+                    for (final node in controller.nodes.values)
+                      NodeWidget(
+                        node: node,
+                        controller: controller,
+                        onExitTextInput: widget.onExitTextInput,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -264,6 +267,16 @@ class _NodeCanvasState extends State<NodeCanvas> {
   }
 
 
+  /// 根據拖線狀態決定滑鼠指標樣式：命中輸入埠用可點擊指標，拖線中為精確指標。
+  MouseCursor _currentCursor() {
+    if (controller.draftTargetPortId != null) {
+      return SystemMouseCursors.click;
+    }
+    if (controller.isDrafting) {
+      return SystemMouseCursors.precise;
+    }
+    return SystemMouseCursors.basic;
+  }
 
   /// 從面板拖曳節點到畫布：在釋放位置建立節點，節點中心點跟隨滑鼠指標。
   void _onBlockDropped(DragTargetDetails<BlockType> details) {

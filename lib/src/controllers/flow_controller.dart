@@ -276,8 +276,18 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 建立連線。
+  /// 建立連線（含自連與重複校驗）。
   void _addConnection(String fromNodeId, String fromPortId, String toNodeId, String toPortId) {
+    // 不允許自連。
+    if (fromNodeId == toNodeId) return;
+    // 不允許重複連線。
+    if (connections.any((c) =>
+        c.fromNodeId == fromNodeId &&
+        c.fromPortId == fromPortId &&
+        c.toNodeId == toNodeId &&
+        c.toPortId == toPortId)) {
+      return;
+    }
     connections.add(FlowConnection(
       id: _nextId('conn'),
       fromNodeId: fromNodeId,
