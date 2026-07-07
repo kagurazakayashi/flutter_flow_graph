@@ -161,9 +161,10 @@ class FlowController extends ChangeNotifier {
     return node;
   }
 
-  /// 刪除節點。
+  /// 刪除節點，同時清理與之相關的連線。
   void removeNode(String id) {
     nodes.remove(id);
+    connections.removeWhere((c) => c.fromNodeId == id || c.toNodeId == id);
     if (selectedNodeId == id) {
       selectedNodeId = null;
     }
@@ -276,18 +277,8 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 建立連線（含自連與重複校驗）。
+  /// 建立連線。
   void _addConnection(String fromNodeId, String fromPortId, String toNodeId, String toPortId) {
-    // 不允許自連。
-    if (fromNodeId == toNodeId) return;
-    // 不允許重複連線。
-    if (connections.any((c) =>
-        c.fromNodeId == fromNodeId &&
-        c.fromPortId == fromPortId &&
-        c.toNodeId == toNodeId &&
-        c.toPortId == toPortId)) {
-      return;
-    }
     connections.add(FlowConnection(
       id: _nextId('conn'),
       fromNodeId: fromNodeId,
