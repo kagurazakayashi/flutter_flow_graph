@@ -225,42 +225,47 @@ class _NodeCanvasState extends State<NodeCanvas> {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        return MouseRegion(
-          cursor: _currentCursor(),
-          child: ClipRect(
-            key: _canvasKey,
-            child: Listener(
-              onPointerSignal: _onPointerSignal,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: _onTapUp,
-                onScaleStart: _onScaleStart,
-                onScaleUpdate: _onScaleUpdate,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    // 網格背景（畫布局部座標）。
-                    Positioned.fill(
-                      child: CustomPaint(painter: GridPainter(controller)),
+        return DragTarget<BlockType>(
+          onAcceptWithDetails: _onBlockDropped,
+          builder: (context, candidates, rejected) {
+            return MouseRegion(
+              cursor: _currentCursor(),
+              child: ClipRect(
+                key: _canvasKey,
+                child: Listener(
+                  onPointerSignal: _onPointerSignal,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: _onTapUp,
+                    onScaleStart: _onScaleStart,
+                    onScaleUpdate: _onScaleUpdate,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // 網格背景（畫布局部座標）。
+                        Positioned.fill(
+                          child: CustomPaint(painter: GridPainter(controller)),
+                        ),
+                        // 連線層（畫布局部座標）。
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: ConnectionPainter(controller),
+                          ),
+                        ),
+                        // 節點（世界座標 -> 畫布局部座標）。
+                        for (final node in controller.nodes.values)
+                          NodeWidget(
+                            node: node,
+                            controller: controller,
+                            onExitTextInput: widget.onExitTextInput,
+                          ),
+                      ],
                     ),
-                    // 連線層（畫布局部座標）。
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: ConnectionPainter(controller),
-                      ),
-                    ),
-                    // 節點（世界座標 -> 畫布局部座標）。
-                    for (final node in controller.nodes.values)
-                      NodeWidget(
-                        node: node,
-                        controller: controller,
-                        onExitTextInput: widget.onExitTextInput,
-                      ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -277,7 +282,6 @@ class _NodeCanvasState extends State<NodeCanvas> {
     }
     return SystemMouseCursors.basic;
   }
-
   /// 從面板拖曳節點到畫布：在釋放位置建立節點，節點中心點跟隨滑鼠指標。
   void _onBlockDropped(DragTargetDetails<BlockType> details) {
     final world = controller.screenToWorld(details.offset);
@@ -304,32 +308,9 @@ class _NodeCanvasState extends State<NodeCanvas> {
         );
       return;
     }
-
-    if (widget.settings?.showZoomHint ?? false) {
-      _showDebugSnackBar(
-        '拖曳入畫布:\n'
-        'feedback全域: (${details.offset.dx.toStringAsFixed(0)}, ${details.offset.dy.toStringAsFixed(0)})\n'
-        '節點(世界): (${pos.dx.toStringAsFixed(0)}, ${pos.dy.toStringAsFixed(0)})',
-      );
-    }
   }
 
-  void _showDebugSnackBar(String text) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 8),
-          content: Text(text),
-          action: SnackBarAction(
-            label: '複製',
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: text));
-            },
-          ),
-        ),
-      );
-  }
+
   void _onPointerSignal(Object event) {
     // 處理滑鼠滾輪縮放。
     // Flutter 3.38+ 中 PointerSignalEvent 已移除，改用動態屬性存取。
@@ -341,13 +322,20 @@ class _NodeCanvasState extends State<NodeCanvas> {
           final factor = math.pow(1.0015, -scrollDelta.dy).toDouble();
           final pointerGlobal = position + controller.canvasOrigin;
           controller.zoomAt(factor, pointerGlobal);
+
+          if (widget.settings?.showZoomHint ?? false) {
+            _showDebugSnackBar(
+              '滾輪縮放: factor=${factor.toStringAsFixed(4)}\n'
+              '指標全域: (${pointerGlobal.dx.toStringAsFixed(0)}, ${pointerGlobal.dy.toStringAsFixed(0)})\n'
+              'scale=${controller.scale.toStringAsFixed(3)} pan=(${controller.panOffset.dx.toStringAsFixed(0)}, ${controller.panOffset.dy.toStringAsFixed(0)})',
+            );
+          }
         }
       }
     } catch (_) {
       // 忽略無法轉換的事件（例如觸控板手勢）。
     }
   }
-
 
   void _onScaleStart(ScaleStartDetails details) {
     _lastScale = 1.0;
