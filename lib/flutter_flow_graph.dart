@@ -1,4 +1,6 @@
 /// Flutter 流程圖編輯器（Flutter Flow Graph）。
+///
+/// 多語言支援（zh_CN / zh_TW / en / ja）。
 library flutter_flow_graph;
 
 export 'src/models/block_config.dart';
