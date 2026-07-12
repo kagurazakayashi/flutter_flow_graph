@@ -5,9 +5,105 @@ import 'package:flutter/foundation.dart';
 import '../models/block_config.dart';
 import '../models/flow_connection.dart';
 import '../models/flow_node.dart';
+import '../models/global_value.dart';
 
+// ---------------------------------------------------------------------------
+// 外部資料提供者介面（由消費方實作）
+// ---------------------------------------------------------------------------
+
+/// 全域值提供者介面。
+///
+/// 消費方可實作此介面來提供常數／變數的查詢能力，
+/// 例如從後端資料庫、本地儲存等來源讀取。
+abstract class GlobalValueProvider {
+  /// 以 ID 查詢全域值，找不到返回 null。
+  GlobalValue? byId(int id);
+
+  /// 取得所有全域值。
+  List<GlobalValue> get all;
+
+  /// 監聽器（變更時通知）。
+  void addListener(VoidCallback listener);
+  void removeListener(VoidCallback listener);
+}
+
+/// 裝置參數提供者介面。
+///
+/// 消費方可實作此介面來提供裝置感測器讀數，
+/// 用於讀取節點和觸發節點的裝置數值來源。
+abstract class DeviceValueProvider {
+  /// 以 SN 和參數 ID 查詢當前讀數（可能為 null）。
+  double? valueOf(String serial, int pollutantId);
+
+  /// 指定參數的顯示單位。
+  String displayUnitOf(String serial, int pollutantId);
+
+  /// 監聽器（讀數變更時通知）。
+  void addListener(VoidCallback listener);
+  void removeListener(VoidCallback listener);
+}
+
+// ---------------------------------------------------------------------------
+// 內建全域值提供者（預設空實作）
+// ---------------------------------------------------------------------------
+
+/// 預設空全域值提供者（不與任何後端連線）。
+class DefaultGlobalValueProvider extends ChangeNotifier
+    implements GlobalValueProvider {
+  final List<GlobalValue> _values = [];
+
+  @override
+  GlobalValue? byId(int id) {
+    try {
+      return _values.firstWhere((v) => v.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  List<GlobalValue> get all => List.unmodifiable(_values);
+
+  /// 批次設定全域值（通常在載入快照時調用）。
+  void setAll(List<GlobalValue> values) {
+    _values
+      ..clear()
+      ..addAll(values);
+    notifyListeners();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FlowController（核心狀態管理）
+// ---------------------------------------------------------------------------
+
+/// 低程式碼畫布的狀態管理：維護節點、連線、視口（平移／縮放）以及拖線預覽。
+///
+/// 所有狀態變更都透過 [notifyListeners] 通知監聽者重建 UI。
+/// 支援：
+/// - 節點增刪改、拖放移動
+/// - 連線建立／刪除、拖線預覽
+/// - 無限畫布平移與縮放
+/// - 快照匯入／匯出（JSON 序列化）
+/// - 單節點測試求值
+/// - 動態輸入埠管理
 class FlowController extends ChangeNotifier {
-  FlowController();
+  FlowController({
+    GlobalValueProvider? globalValues,
+    DeviceValueProvider? deviceProvider,
+  }) : _globalValues = globalValues ?? DefaultGlobalValueProvider(),
+       _deviceProvider = deviceProvider;
+
+  // ---- 外部依賴 ----
+
+  final GlobalValueProvider _globalValues;
+  final DeviceValueProvider? _deviceProvider;
+
+  /// 全域值提供者（常數／變數）。
+  GlobalValueProvider get globalValues => _globalValues;
+
+  /// 裝置數值提供者（感測器讀數）。
+  DeviceValueProvider? get deviceProvider => _deviceProvider;
 
   // ---- 節點與連線 ----
 
