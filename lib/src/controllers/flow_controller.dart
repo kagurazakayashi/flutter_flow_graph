@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../models/block_config.dart';
 import '../models/flow_connection.dart';
 import '../models/flow_node.dart';
+import '../models/flow_snapshot.dart';
 import '../models/global_value.dart';
 
 // ---------------------------------------------------------------------------
@@ -611,6 +612,46 @@ class FlowController extends ChangeNotifier {
       }
     }
     return bestDist < threshold ? best : null;
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // 快照（序列化）
+  // ---------------------------------------------------------------------------
+
+  /// 將當前畫布狀態匯出為快照。
+  FlowSnapshot toSnapshot() => FlowSnapshot(
+    nodes: nodes.values.map((n) => n.toJson()).toList(),
+    connections: connections.map((c) => c.toJson()).toList(),
+  );
+
+
+  /// 從快照載入畫布狀態（清除現有狀態）。
+  void loadSnapshot(FlowSnapshot snapshot) {
+    nodes.clear();
+    connections.clear();
+    _seq = 0;
+    for (final json in snapshot.nodes) {
+      final node = FlowNode.fromJson(json);
+      nodes[node.id] = node;
+      // 確保 seq 計數器大於已載入的 ID。
+      final idNum = int.tryParse(node.id.replaceFirst('node-', ''));
+      if (idNum != null && idNum >= _seq) _seq = idNum + 1;
+    }
+    for (final json in snapshot.connections) {
+      connections.add(FlowConnection.fromJson(json));
+      final idNum = int.tryParse(
+        FlowConnection.fromJson(json).id.replaceFirst('conn-', ''),
+      );
+      if (idNum != null && idNum >= _seq) _seq = idNum + 1;
+    }
+    _isDirty = false;
+    clearSelection();
+    if (!viewInitialized) {
+      resetView();
+      viewInitialized = true;
+    }
+    notifyListeners();
   }
 
 // 釋放資源

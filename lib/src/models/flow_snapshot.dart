@@ -11,3 +11,15 @@ class FlowSnapshot {
   static const FlowSnapshot empty = FlowSnapshot(nodes: [], connections: []);
 
   bool get isEmpty => nodes.isEmpty;
+
+  Map<String, dynamic> toJson() => {'nodes': nodes, 'connections': connections};
+
+  factory FlowSnapshot.fromJson(Map<String, dynamic> json) => FlowSnapshot(
+    nodes: (json['nodes'] as List<dynamic>? ?? const [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList(),
+    connections: (json['connections'] as List<dynamic>? ?? const [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList(),
+  );
+}
