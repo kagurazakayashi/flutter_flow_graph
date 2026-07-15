@@ -654,6 +654,437 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  // ---------------------------------------------------------------------------
+  // 節點求值（單節點測試）
+  // ---------------------------------------------------------------------------
+
+  /// 各節點目前顯示的「目前結果」值（用於 UI 展示，不做副作用）。
+  Object? currentBlockResult(String nodeId) {
+    final result = _evaluateBlock(nodeId);
+    return result.output;
+  }
+
+
+  /// 測試單個節點：依當前邏輯與輸入值計算輸出。
+  BlockTestResult testBlock(String nodeId) {
+    return _evaluateBlock(nodeId);
+  }
+
+
+  BlockTestResult _evaluateBlock(String nodeId) {
+    final node = nodes[nodeId];
+    if (node == null) {
+      return BlockTestResult(
+        outputText: '—',
+        errors: const ['節點不存在'],
+      );
+    }
+
+    switch (node.type) {
+      case BlockType.trigger:
+        return _evalTrigger(node);
+      case BlockType.read:
+        return _evalRead(node);
+      case BlockType.counter:
+        return _evalCounter(node);
+      case BlockType.judge:
+        return _evalJudge(node);
+      case BlockType.calc:
+        return _evalCalc(node);
+      case BlockType.composite:
+        return _evalComposite(node);
+      case BlockType.execute:
+        return _evalExecute(node);
+    }
+  }
+
+
+  // ---- 觸發節點 ----
+
+  BlockTestResult _evalTrigger(FlowNode node) {
+    final cfg = node.config;
+    switch (cfg.triggerType) {
+      case 1:
+        // 裝置數值
+        if (_deviceProvider != null &&
+            cfg.triggerSerial != null &&
+            cfg.triggerPollutantId != null) {
+          final v = _deviceProvider.valueOf(cfg.triggerSerial!, cfg.triggerPollutantId!);
+          if (v != null) {
+            return BlockTestResult(output: v, outputText: formatTestValue(v));
+          }
+        }
+        return BlockTestResult(outputText: '—（無資料）');
+      case 2:
+        // 變數值
+        if (cfg.triggerVariableId != null) {
+          final gv = _globalValues.byId(cfg.triggerVariableId!);
+          if (gv != null && gv.value != null) {
+            return BlockTestResult(
+              output: _parseNumeric(gv.value!),
+              outputText: gv.value!,
+            );
+          }
+        }
+        return BlockTestResult(outputText: '—（無資料）');
+      case 3:
+        // 時間觸發
+        return BlockTestResult(
+          output: false,
+          outputText: 'false',
+          notes: ['時間觸發條件：${cfg.cronExpression ?? "未設定"}'],
+        );
+      default:
+        return BlockTestResult(outputText: '未設定觸發條件');
+    }
+  }
+
+
+  // ---- 讀取節點 ----
+
+  BlockTestResult _evalRead(FlowNode node) {
+    final cfg = node.config;
+    switch (cfg.sourceType) {
+      case 'device_param':
+        if (_deviceProvider != null &&
+            cfg.sourceSerial != null &&
+            cfg.sourcePollutantId != null) {
+          final v = _deviceProvider.valueOf(cfg.sourceSerial!, cfg.sourcePollutantId!);
+          if (v != null) return BlockTestResult(output: v, outputText: formatTestValue(v));
+        }
+        return BlockTestResult(outputText: '—（無資料）');
+      case 'constant':
+      case 'variable':
+        if (cfg.sourceGlobalValueId != null) {
+          final gv = _globalValues.byId(cfg.sourceGlobalValueId!);
+          if (gv != null && gv.value != null) {
+            return BlockTestResult(
+              output: _parseNumeric(gv.value!),
+              outputText: gv.value!,
+            );
+          }
+        }
+        return BlockTestResult(outputText: '—（無資料）');
+      default:
+        return BlockTestResult(outputText: '無參數');
+    }
+  }
+
+
+  // ---- 計數器節點 ----
+
+  BlockTestResult _evalCounter(FlowNode node) {
+    return BlockTestResult(
+      output: 0,
+      outputText: '0',
+      notes: ['計數器節點：設計期固定顯示 0（執行期由引擎維護）'],
+    );
+  }
+
+
+  // ---- 判斷節點 ----
+
+  BlockTestResult _evalJudge(FlowNode node) {
+    final cfg = node.config;
+    final x = _resolveInputValue(node.id, 'x');
+    final a = _resolveInputValue(node.id, 'a') ?? cfg.aValue;
+    final b = _resolveInputValue(node.id, 'b') ?? cfg.bValue;
+
+    final notes = <String>[];
+    if (x == null) {
+      return BlockTestResult(
+        outputText: '—',
+        errors: ['x 輸入值不可為空'],
+      );
+    }
+
+    bool result;
+    if (cfg.judgeMode == 'range') {
+      if (a == null || b == null) {
+        return BlockTestResult(
+          outputText: '—',
+          errors: ['範圍模式需要 a 和 b 兩個值'],
+        );
+      }
+      switch (cfg.judgeOperator) {
+        case 'between':
+          result = x >= a && x <= b;
+          break;
+        case 'not_between':
+          result = x < a || x > b;
+          break;
+        default:
+          result = false;
+      }
+      notes.add('判斷：$x ${cfg.judgeOperator} [$a, $b] → $result');
+    } else {
+      // 單值模式
+      if (a == null) {
+        return BlockTestResult(
+          outputText: '—',
+          errors: ['單值模式需要 a 比較值'],
+        );
+      }
+      switch (cfg.judgeOperator) {
+        case '>':
+          result = x > a;
+          break;
+        case '>=':
+          result = x >= a;
+          break;
+        case '<':
+          result = x < a;
+          break;
+        case '<=':
+          result = x <= a;
+          break;
+        case '==':
+          result = x == a;
+          break;
+        case '!=':
+          result = x != a;
+          break;
+        default:
+          result = false;
+      }
+      notes.add('判斷：$x ${cfg.judgeOperator} $a → $result');
+    }
+
+    return BlockTestResult(
+      output: result,
+      outputText: result ? 'true' : 'false',
+      notes: notes,
+    );
+  }
+
+
+  // ---- 運算節點 ----
+
+  BlockTestResult _evalCalc(FlowNode node) {
+    final cfg = node.config;
+    final notes = <String>[];
+
+    if (cfg.formula.isEmpty) {
+      return BlockTestResult(
+        outputText: '—',
+        errors: ['公式為空'],
+      );
+    }
+
+    // 解析公式中的變數
+    var formula = cfg.formula;
+    final vars = <String, double>{};
+    for (final port in node.inputs) {
+      final v = _resolveInputValue(node.id, port.id);
+      if (v != null) {
+        vars[port.id] = v;
+        formula = formula.replaceAll(port.id, v.toString());
+      } else {
+        // 埠未連線且無輸入值時，嘗試視為 0（僅在公式中出現該變數時）
+        if (formula.contains(port.id)) {
+          vars[port.id] = 0;
+          formula = formula.replaceAll(port.id, '0');
+          notes.add('${port.id} 未連線，視為 0');
+        }
+      }
+    }
+
+    try {
+      final result = _evalExpression(formula);
+      final outputText = formatTestValue(result);
+      return BlockTestResult(
+        output: result,
+        outputText: outputText,
+        notes: notes,
+      );
+    } catch (e) {
+      return BlockTestResult(
+        outputText: '—',
+        errors: ['公式計算錯誤：$e'],
+      );
+    }
+  }
+
+  // ---- 組合判斷節點 ----
+
+  BlockTestResult _evalComposite(FlowNode node) {
+    final cfg = node.config;
+    final values = <bool>[];
+    final notes = <String>[];
+
+    for (final port in node.inputs) {
+      final box = cfg.inputValues[port.id];
+      if (box != null && box.trim().isNotEmpty) {
+        final v = box.trim().toLowerCase() == 'true';
+        values.add(v);
+        notes.add('${port.id} = $v（輸入框）');
+      } else {
+        notes.add('${port.id} 未設定，視為 false');
+        values.add(false);
+      }
+    }
+
+    bool result;
+    switch (cfg.logic) {
+      case 'AND':
+        result = values.every((v) => v);
+        break;
+      case 'OR':
+        result = values.any((v) => v);
+        break;
+      case 'NOT':
+        result = !values.first;
+        break;
+      default:
+        result = false;
+    }
+
+    return BlockTestResult(
+      output: result,
+      outputText: result ? 'true' : 'false',
+      notes: notes,
+    );
+  }
+
+  // ---- 執行節點 ----
+
+  BlockTestResult _evalExecute(FlowNode node) {
+    final cfg = node.config;
+    final notes = <String>[];
+    final errors = <String>[];
+
+    final triggerValue =
+        (cfg.inputValues['trigger'] ?? '').trim().toLowerCase() == 'true';
+    notes.add('判斷值條件：$triggerValue');
+
+    if (cfg.actions.isEmpty) {
+      errors.add('未設定執行動作');
+    } else {
+      notes.add('${cfg.actions.length} 個動作待執行');
+    }
+
+    return BlockTestResult(
+      output: triggerValue,
+      outputText: triggerValue ? 'true' : 'false',
+      notes: notes,
+      errors: errors,
+    );
+  }
+
+  /// 解析節點某埠的輸入值（從輸入框取值）。
+  double? _resolveInputValue(String nodeId, String portId) {
+    final node = nodes[nodeId];
+    if (node == null) return null;
+    final box = node.config.inputValues[portId];
+    if (box != null && box.trim().isNotEmpty) {
+      return double.tryParse(box.trim());
+    }
+    return null;
+  }
+
+
+  /// 簡易數學表示式求值（支援 + - * / 和括號）。
+  double _evalExpression(String expr) {
+    // 清理空白
+    expr = expr.replaceAll(RegExp(r'\s+'), '');
+    // 先處理乘除
+    final tokens = _tokenize(expr);
+    return _parseAddSub(tokens);
+  }
+
+
+  List<dynamic> _tokenize(String expr) {
+    final tokens = <dynamic>[];
+    var i = 0;
+    while (i < expr.length) {
+      if (expr[i] == '(' || expr[i] == ')' || expr[i] == '+' ||
+          expr[i] == '-' || expr[i] == '*' || expr[i] == '/') {
+        tokens.add(expr[i]);
+        i++;
+      } else {
+        var numStr = '';
+        if (expr[i] == '-') {
+          numStr = '-';
+          i++;
+        }
+        while (i < expr.length &&
+            (expr[i].codeUnitAt(0) >= 48 && expr[i].codeUnitAt(0) <= 57 ||
+                expr[i] == '.')) {
+          numStr += expr[i];
+          i++;
+        }
+        if (numStr.isNotEmpty) {
+          tokens.add(double.parse(numStr));
+        }
+      }
+    }
+    return tokens;
+  }
+
+
+  double _parseAddSub(List<dynamic> tokens) {
+    var result = _parseMulDiv(tokens);
+    while (tokens.isNotEmpty) {
+      final op = tokens.first;
+      if (op == '+') {
+        tokens.removeAt(0);
+        result += _parseMulDiv(tokens);
+      } else if (op == '-') {
+        tokens.removeAt(0);
+        result -= _parseMulDiv(tokens);
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+
+  double _parseMulDiv(List<dynamic> tokens) {
+    var result = _parseAtom(tokens);
+    while (tokens.isNotEmpty) {
+      final op = tokens.first;
+      if (op == '*') {
+        tokens.removeAt(0);
+        result *= _parseAtom(tokens);
+      } else if (op == '/') {
+        tokens.removeAt(0);
+        final divisor = _parseAtom(tokens);
+        if (divisor == 0) throw Exception('除數不可為 0');
+        result /= divisor;
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+
+  double _parseAtom(List<dynamic> tokens) {
+    if (tokens.isEmpty) throw Exception('表示式不完整');
+    final first = tokens.removeAt(0);
+    if (first is double) return first;
+    if (first == '(') {
+      final result = _parseAddSub(tokens);
+      if (tokens.isEmpty || tokens.first != ')') {
+        throw Exception('缺少右括號');
+      }
+      tokens.removeAt(0);
+      return result;
+    }
+    if (first == '-') {
+      return -_parseAtom(tokens);
+    }
+    throw Exception('無法解析：$first');
+  }
+
+
+  /// 將字串解析為數值。
+  double? _parseNumeric(String s) {
+    return double.tryParse(s.trim());
+  }
+
 // 釋放資源
   // ---------------------------------------------------------------------------
 

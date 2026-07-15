@@ -28,3 +28,16 @@ class BlockTestResult {
 
   bool get hasError => errors.isNotEmpty;
 }
+
+/// 格式化測試值為可讀字串。
+String formatTestValue(Object? value) {
+  if (value == null) return '—';
+  if (value is double) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(6).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+  }
+  if (value is bool) return value ? 'true' : 'false';
+  return value.toString();
+}
