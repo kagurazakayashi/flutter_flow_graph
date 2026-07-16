@@ -237,6 +237,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTapUp: _onTapUp,
+                    onSecondaryTapUp: _onSecondaryTapUp,
                     onScaleStart: _onScaleStart,
                     onScaleUpdate: _onScaleUpdate,
                     child: Stack(
@@ -258,6 +259,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
                             node: node,
                             controller: controller,
                             onExitTextInput: widget.onExitTextInput,
+                            onConfigRequested: widget.onNodeConfigRequested,
                           ),
                       ],
                     ),
@@ -271,7 +273,6 @@ class _NodeCanvasState extends State<NodeCanvas> {
     );
   }
 
-
   /// 根據拖線狀態決定滑鼠指標樣式：命中輸入埠用可點擊指標，拖線中為精確指標。
   MouseCursor _currentCursor() {
     if (controller.draftTargetPortId != null) {
@@ -282,6 +283,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
     }
     return SystemMouseCursors.basic;
   }
+
   /// 從面板拖曳節點到畫布：在釋放位置建立節點，節點中心點跟隨滑鼠指標。
   void _onBlockDropped(DragTargetDetails<BlockType> details) {
     final world = controller.screenToWorld(details.offset);
@@ -308,8 +310,32 @@ class _NodeCanvasState extends State<NodeCanvas> {
         );
       return;
     }
+
+    if (widget.settings?.showZoomHint ?? false) {
+      _showDebugSnackBar(
+        '拖曳入畫布:\n'
+        'feedback全域: (${details.offset.dx.toStringAsFixed(0)}, ${details.offset.dy.toStringAsFixed(0)})\n'
+        '節點(世界): (${pos.dx.toStringAsFixed(0)}, ${pos.dy.toStringAsFixed(0)})',
+      );
+    }
   }
 
+  void _showDebugSnackBar(String text) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 8),
+          content: Text(text),
+          action: SnackBarAction(
+            label: '複製',
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+            },
+          ),
+        ),
+      );
+  }
 
   void _onPointerSignal(Object event) {
     // 處理滑鼠滾輪縮放。
