@@ -189,3 +189,47 @@ class BlockConfig {
         [],
   );
 }
+
+/// 產生設定摘要文字（顯示在節點設定條上）。
+/// [nameOf] 為可選的回呼，用於將全域值 ID 轉換為顯示名稱。
+String configSummary(BlockType type, BlockConfig config,
+    {String Function(int id)? nameOf}) {
+  switch (type) {
+    case BlockType.calc:
+      return config.formula.isEmpty ? '（無公式）' : config.formula;
+    case BlockType.judge:
+      final mode = config.judgeMode == 'range' ? '範圍' : '單值';
+      return '$mode ${config.judgeOperator}';
+    case BlockType.composite:
+      return config.logic;
+    case BlockType.read:
+      switch (config.sourceType) {
+        case 'device_param':
+          final sn = config.sourceSerial ?? '';
+          final pid = config.sourcePollutantId?.toString() ?? '';
+          return '裝置 $sn / $pid';
+        case 'constant':
+        case 'variable':
+          final id = config.sourceGlobalValueId;
+          final name = id != null ? (nameOf?.call(id) ?? '$id') : '—';
+          return config.sourceType == 'constant' ? '常數 $name' : '變數 $name';
+        default:
+          return '無參數';
+      }
+    case BlockType.trigger:
+      switch (config.triggerType) {
+        case 1:
+          return '裝置數值';
+        case 2:
+          return '變數值';
+        case 3:
+          return '時間觸發';
+        default:
+          return '未設定';
+      }
+    case BlockType.counter:
+      return config.countMode == 'increment' ? '遞增 ${config.countValue}' : '遞減 ${config.countValue}';
+    case BlockType.execute:
+      return '${config.actions.length} 個動作';
+  }
+}
