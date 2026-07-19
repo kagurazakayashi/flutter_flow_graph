@@ -3,10 +3,12 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 
 import '../models/block_config.dart';
+import '../models/block_test.dart';
 import '../models/flow_connection.dart';
 import '../models/flow_node.dart';
 import '../models/flow_snapshot.dart';
 import '../models/global_value.dart';
+
 
 // ---------------------------------------------------------------------------
 // 外部資料提供者介面（由消費方實作）
@@ -407,6 +409,7 @@ class FlowController extends ChangeNotifier {
     );
   }
 
+
   /// 某節點的某輸出埠是否輸出數值（設計期依宣告型別推斷）。
   bool isNumberOutput(String nodeId, String portId) {
     final node = nodes[nodeId];
@@ -415,12 +418,33 @@ class FlowController extends ChangeNotifier {
       case BlockType.calc:
         return portId == 'out';
       case BlockType.trigger:
-        return node.config.triggerType == 1;
+        switch (node.config.triggerType) {
+          case 1:
+            return true;
+          case 2:
+          case 3:
+            final id = node.config.triggerVariableId;
+            if (id == null) return false;
+            return _globalValues.byId(id)?.dataType == 'number';
+          default:
+            return false;
+        }
       case BlockType.read:
-        return node.config.sourceType == 'device_param';
+        switch (node.config.sourceType) {
+          case 'device_param':
+            return true;
+          case 'variable':
+          case 'constant':
+            final id = node.config.sourceGlobalValueId;
+            if (id == null) return false;
+            return _globalValues.byId(id)?.dataType == 'number';
+          default:
+            return false;
+        }
       case BlockType.counter:
       case BlockType.judge:
       case BlockType.composite:
+        return false;
       case BlockType.execute:
         return false;
     }
@@ -906,6 +930,7 @@ class FlowController extends ChangeNotifier {
     }
   }
 
+
   // ---- 組合判斷節點 ----
 
   BlockTestResult _evalComposite(FlowNode node) {
@@ -914,13 +939,13 @@ class FlowController extends ChangeNotifier {
     final notes = <String>[];
 
     for (final port in node.inputs) {
-      final box = cfg.inputValues[port.id];
-      if (box != null && box.trim().isNotEmpty) {
-        final v = box.trim().toLowerCase() == 'true';
+      final src = _resolveInputSource(node.id, port.id);
+      if (src != null) {
+        final v = _resolveBoolean(sourceNodeId: src.nodeId, sourcePortId: src.portId);
         values.add(v);
-        notes.add('${port.id} = $v（輸入框）');
+        notes.add('${port.id} ← ${src.nodeId}.${src.portId} = $v');
       } else {
-        notes.add('${port.id} 未設定，視為 false');
+        notes.add('${port.id} 未連線，視為 false');
         values.add(false);
       }
     }
@@ -947,6 +972,7 @@ class FlowController extends ChangeNotifier {
     );
   }
 
+
   // ---- 執行節點 ----
 
   BlockTestResult _evalExecute(FlowNode node) {
@@ -954,14 +980,27 @@ class FlowController extends ChangeNotifier {
     final notes = <String>[];
     final errors = <String>[];
 
-    final triggerValue =
-        (cfg.inputValues['trigger'] ?? '').trim().toLowerCase() == 'true';
+    // 檢查 trigger 埠條件
+    final triggerValue = _resolveBoolean(
+      sourceNodeId: node.id,
+      sourcePortId: 'trigger',
+      resolveUpstream: true,
+    );
     notes.add('判斷值條件：$triggerValue');
 
     if (cfg.actions.isEmpty) {
       errors.add('未設定執行動作');
     } else {
       notes.add('${cfg.actions.length} 個動作待執行');
+    }
+
+    // 檢查次要條件
+    for (final port in node.inputs) {
+      if (port.id == 'trigger') continue;
+      final cond = cfg.secondaryConditions[port.id];
+      if (cond != null && cond.isNotEmpty) {
+        notes.add('次要條件 $port.id：$cond');
+      }
     }
 
     return BlockTestResult(
@@ -972,15 +1011,76 @@ class FlowController extends ChangeNotifier {
     );
   }
 
-  /// 解析節點某埠的輸入值（從輸入框取值）。
+
+  // ---- 求值輔助方法 ----
+
+  /// 解析節點某埠的輸入值（優先從上游連線取值，否則從輸入框取值）。
   double? _resolveInputValue(String nodeId, String portId) {
     final node = nodes[nodeId];
     if (node == null) return null;
+
+    // 先查上游連線
+    final src = _resolveInputSource(nodeId, portId);
+    if (src != null) {
+      final result = _resolveNumeric(
+        sourceNodeId: src.nodeId,
+        sourcePortId: src.portId,
+      );
+      if (result != null) return result;
+    }
+
+    // 再查輸入框
     final box = node.config.inputValues[portId];
     if (box != null && box.trim().isNotEmpty) {
       return double.tryParse(box.trim());
     }
+
     return null;
+  }
+
+
+  /// 解析上游來源（追蹤連線）。
+  ({String nodeId, String portId})? _resolveInputSource(
+
+
+  /// 解析上游節點某輸出埠的數值。
+  double? _resolveNumeric({
+    required String sourceNodeId,
+    required String sourcePortId,
+  }) {
+    final srcNode = nodes[sourceNodeId];
+    if (srcNode == null) return null;
+    final result = _evaluateBlock(sourceNodeId);
+    final v = result.output;
+    if (v is num) return v.toDouble();
+    if (v is bool) return v ? 1.0 : 0.0;
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
+
+
+  /// 解析上游節點某輸出埠的布林值。
+  bool _resolveBoolean({
+    required String sourceNodeId,
+    required String sourcePortId,
+    bool resolveUpstream = false,
+  }) {
+    if (resolveUpstream) {
+      final src = _resolveInputSource(sourceNodeId, sourcePortId);
+      if (src != null) {
+        return _resolveBoolean(
+          sourceNodeId: src.nodeId,
+          sourcePortId: src.portId,
+        );
+      }
+    }
+    final srcNode = nodes[sourceNodeId];
+    if (srcNode == null) return false;
+    final result = _evaluateBlock(sourceNodeId);
+    final v = result.output;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    return false;
   }
 
 
