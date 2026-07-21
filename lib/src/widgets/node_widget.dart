@@ -184,6 +184,7 @@ class NodeWidget extends StatelessWidget {
       ),
     );
   }
+
   Future<void> _showContextMenu(BuildContext context, Offset globalPos) async {
     final result = await showMenu<String>(
       context: context,
@@ -195,19 +196,49 @@ class NodeWidget extends StatelessWidget {
       ),
       items: const [
         PopupMenuItem(
+          value: 'config',
+          child: Row(
+            children: [
+              Icon(Icons.settings_outlined, size: 18),
+              SizedBox(width: 8),
+              Text('設定...'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
           value: 'delete',
-          child: Text('刪除'),
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18),
+              SizedBox(width: 8),
+              Text('刪除'),
+            ],
+          ),
         ),
       ],
     );
-    if (result == 'delete') {
+    if (!context.mounted) return;
+    if (result == 'config') {
+      _openConfig(context);
+    } else if (result == 'delete') {
       controller.removeNode(node.id);
     }
   }
+
   void _openConfig(BuildContext context) {
-    onConfigRequested?.call(context, node.id);
+    if (onConfigRequested != null) {
+      onConfigRequested!(context, node.id);
+    } else {
+      _openDefaultConfigDialog(context);
+    }
   }
 
+  Future<void> _openDefaultConfigDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _DefaultConfigDialog(node: node, controller: controller),
+    );
+  }
 
   Widget _buildColorBar(Color color) {
     return Positioned(
