@@ -132,10 +132,13 @@ Color _lineColor(FlowController controller, String portId) {
   }
 }
 
+/// 貝塞爾曲線取樣步數（命中測試精度與效能平衡）。
+const int _bezierSteps = 40;
+
 /// 在貝塞爾曲線上取樣若干點，用於命中測試（點擊連線選取）。
 List<Offset> bezierPoints(Offset from, Offset to) {
   final dx = math.max((to.dx - from.dx).abs() * 0.5, 50.0);
-  const steps = 40;
+  const steps = _bezierSteps;
   final pts = <Offset>[];
   for (var i = 0; i <= steps; i++) {
     final t = i / steps;
