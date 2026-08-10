@@ -1,7 +1,19 @@
 name: flutter_flow_graph
-description: A Flutter node graph editor package.
-version: 0.1.0
-publish_to: none
+description: 一個高效能、零外部狀態管理依賴的 Flutter 節點圖編輯器套件。
+  支援拖放連線、貝塞爾曲線繪製、無限畫布平移縮放，
+  內建多種節點類型（觸發、讀取、計數器、判斷、運算、組合判斷、執行），
+  適用於低程式碼視覺化編排、規則引擎、工作流程編輯器等場景。
+version: 0.9.0
+homepage: https://github.com/KagurazakaMiyabi/flutter_flow_graph
+repository: https://github.com/KagurazakaMiyabi/flutter_flow_graph
+
+platforms:
+  android:
+  ios:
+  linux:
+  macos:
+  web:
+  windows:
 
 environment:
   sdk: ^3.2.0
