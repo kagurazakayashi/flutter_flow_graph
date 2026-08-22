@@ -14,4 +14,5 @@ lib/src/i18n/gen/
 
 # Pub
 .pub/
-pubspec.lock
+pubspec.lock# 專案
+COMMIT_PLAN.md
