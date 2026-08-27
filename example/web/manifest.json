@@ -1,0 +1,24 @@
+{
+    "name": "Flutter Flow Graph",
+    "short_name": "Flow Graph",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#e6ebf0",
+    "theme_color": "#5a67d8",
+    "description": "Flutter Flow Graph — Node Graph Editor example app",
+    "orientation": "landscape-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

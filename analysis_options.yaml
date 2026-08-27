@@ -1,8 +1,8 @@
 include: package:flutter_lints/flutter.yaml
 
-# 專案級 lint 設定。
-# 依循 flutter_lints 預設規則；若有專案特例，可在下方 linter.rules 中調整。
 linter:
   rules:
-    # 例：const 建構子優先（flutter_lints 已包含，此處僅作示範）。
-    # prefer_const_constructors: true
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - avoid_print
+    - prefer_single_quotes
