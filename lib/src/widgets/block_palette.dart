@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/gen/app_localizations.dart';
 import '../models/flow_node.dart';
 
 /// 左側節點面板，展示所有可新增的節點型別。
@@ -9,7 +10,7 @@ class BlockPalette extends StatelessWidget {
     super.key,
     required this.onAddBlock,
     this.fontScale = 1.0,
-    this.hintText = '點擊或拖曳到畫布',
+    this.hintText = '',
     this.customBlockTypes = const [],
   });
 
@@ -18,7 +19,7 @@ class BlockPalette extends StatelessWidget {
   /// 節點內字型縮放（用於拖曳預覽尺寸與畫布節點一致）。
   final double fontScale;
 
-  /// 使用提示文字。
+  /// 使用提示文字；留空時依系統語言自動顯示提示。
   final String hintText;
 
   /// 自訂節點型別列表（消費方可注入額外的節點型別）。
@@ -26,6 +27,8 @@ class BlockPalette extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final hint = hintText.isEmpty ? l10n.canvasHint : hintText;
     return Container(
       width: 220,
       color: const Color(0xFFF5F6F8),
@@ -35,7 +38,7 @@ class BlockPalette extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 2),
             child: Text(
-              hintText,
+              hint,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
@@ -45,7 +48,6 @@ class BlockPalette extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               children: [
-                // 內建節點型別
                 for (final type in BlockType.values)
                   _BlockItem(
                     type: type,
@@ -95,8 +97,34 @@ class _BlockItem extends StatelessWidget {
   final double fontScale;
   final VoidCallback onTap;
 
+  /// 依系統語言回傳節點型別標籤。
+  String _localizedLabel(AppLocalizations l10n, BlockType t) => switch (t) {
+        BlockType.trigger => l10n.blockTypeTrigger,
+        BlockType.read => l10n.blockTypeRead,
+        BlockType.counter => l10n.blockTypeCounter,
+        BlockType.judge => l10n.blockTypeJudge,
+        BlockType.calc => l10n.blockTypeCalc,
+        BlockType.composite => l10n.blockTypeComposite,
+        BlockType.execute => l10n.blockTypeExecute,
+      };
+
+  /// 依系統語言回傳節點型別描述。
+  String _localizedDescription(AppLocalizations l10n, BlockType t) =>
+      switch (t) {
+        BlockType.trigger => l10n.descTrigger,
+        BlockType.read => l10n.descRead,
+        BlockType.counter => l10n.descCounter,
+        BlockType.judge => l10n.descJudge,
+        BlockType.calc => l10n.descCalc,
+        BlockType.composite => l10n.descComposite,
+        BlockType.execute => l10n.descExecute,
+      };
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final label = _localizedLabel(l10n, type);
+    final description = _localizedDescription(l10n, type);
     return Draggable<BlockType>(
       data: type,
       dragAnchorStrategy: pointerDragAnchorStrategy,
@@ -106,7 +134,7 @@ class _BlockItem extends StatelessWidget {
           -NodeMetrics.headerHeight(fontScale) / 2,
         ),
         child: _BlockDragPreview(
-          label: builtinBlockTypeLabel(type),
+          label: label,
           color: builtinBlockTypeColor(type),
           fontScale: fontScale,
         ),
@@ -114,14 +142,14 @@ class _BlockItem extends StatelessWidget {
       childWhenDragging: Opacity(
         opacity: 0.35,
         child: _buildCard(
-          label: builtinBlockTypeLabel(type),
-          description: builtinBlockTypeDescription(type),
+          label: label,
+          description: description,
           color: builtinBlockTypeColor(type),
         ),
       ),
       child: _buildCard(
-        label: builtinBlockTypeLabel(type),
-        description: builtinBlockTypeDescription(type),
+        label: label,
+        description: description,
         color: builtinBlockTypeColor(type),
       ),
     );

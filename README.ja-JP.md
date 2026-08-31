@@ -11,27 +11,27 @@
 
 **全プラットフォーム対応：** Android · iOS · Web · Windows · macOS · Linux
 
-📖 [English](README.md) | [中文（简体）](README.zh-CN.md) | [中文（繁體）](README.zh-TW.md)
+ [English](README.md) | [中文（简体）](README.zh-CN.md) | [中文（繁體）](README.zh-TW.md)
 
 ## 特徴
 
-- 🎨 **ノードグラフエディタ** — 無限キャンバス上でドラッグ＆ドロップ、接続
-- 🧩 **7 種類の組み込みノード** — トリガー、読み取り、カウンター、判定、計算、複合判定、実行
-- 🔗 **ベジェ曲線接続** — ポートセマンティクスによる色分け
-- 🔍 **無限キャンバス** — パン、ズーム、グリッド背景、原点マーカー
-- 🧪 **単一ノードテスト** — 各ノードを独立して評価
-- 🔄 **動的入力ポート** — 計算／判定／複合判定／実行ノードで自動追加／削除
-- 💾 **スナップショットシリアル化** — JSON による完全なエクスポート／インポート
-- 🎯 **ゼロ外部状態管理** — 純粋な `ChangeNotifier`、サードパーティ依存なし
-- 🌐 **多言語対応** — zh_TW（デフォルト）、zh_CN、en、ja
-- 🔌 **プロバイダインターフェース** — `GlobalValueProvider` と `DeviceValueProvider` でカスタムバックエンド
+- **ノードグラフエディタ** — 無限キャンバス上でドラッグ＆ドロップ、接続
+- **7 種類の組み込みノード** — トリガー、読み取り、カウンター、判定、計算、複合判定、実行
+- **ベジェ曲線接続** — ポートセマンティクスによる色分け
+- **無限キャンバス** — パン、ズーム、グリッド背景、原点マーカー
+- **単一ノードテスト** — 各ノードを独立して評価
+- **動的入力ポート** — 計算／判定／複合判定／実行ノードで自動追加／削除
+- **スナップショットシリアル化** — JSON による完全なエクスポート／インポート
+- **ゼロ外部状態管理** — 純粋な `ChangeNotifier`、サードパーティ依存なし
+- **多言語対応** — zh_TW（デフォルト）、zh_CN、en、ja
+- **プロバイダインターフェース** — `GlobalValueProvider` と `DeviceValueProvider` でカスタムバックエンド
 
 ## クイックスタート
 
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_flow_graph: ^1.0.0
+ flutter_flow_graph: ^1.0.0
 ```
 
 ```dart
@@ -42,14 +42,14 @@ final controller = FlowController();
 
 // レイアウト：左パネル + キャンバス
 Row(
-  children: [
-    BlockPalette(
-      onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
-    ),
-    Expanded(
-      child: NodeCanvas(controller: controller),
-    ),
-  ],
+ children: [
+  BlockPalette(
+   onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
+  ),
+  Expanded(
+   child: NodeCanvas(controller: controller),
+  ),
+ ],
 )
 ```
 
@@ -59,8 +59,8 @@ Row(
 
 ```dart
 final controller = FlowController(
-  globalValues: MyGlobalValueProvider(),
-  deviceProvider: MyDeviceValueProvider(),
+ globalValues: MyGlobalValueProvider(),
+ deviceProvider: MyDeviceValueProvider(),
 );
 ```
 
@@ -68,16 +68,16 @@ final controller = FlowController(
 
 ```dart
 NodeCanvas(
-  controller: controller,
-  onNodeConfigRequested: (context, nodeId) {
-    showDialog(
-      context: context,
-      builder: (_) => MyCustomConfigDialog(
-        nodeId: nodeId,
-        controller: controller,
-      ),
-    );
-  },
+ controller: controller,
+ onNodeConfigRequested: (context, nodeId) {
+  showDialog(
+   context: context,
+   builder: (_) => MyCustomConfigDialog(
+    nodeId: nodeId,
+    controller: controller,
+   ),
+  );
+ },
 )
 ```
 

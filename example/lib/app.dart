@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_flow_graph/flutter_flow_graph.dart';
 
 
@@ -16,6 +17,13 @@ class FlowGraphExampleApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.light,
       ),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const FlowGraphExamplePage(),
     );
   }

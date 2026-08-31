@@ -1,7 +1,9 @@
 {
   "@@locale": "zh_TW",
   "blockTypeTrigger": "觸發",
-  "@blockTypeTrigger": {"description": "觸發節點類型標籤"},
+  "@blockTypeTrigger": {
+    "description": "觸發節點類型標籤"
+  },
   "blockTypeRead": "讀取",
   "blockTypeCounter": "計數器",
   "blockTypeJudge": "判斷",
@@ -23,7 +25,13 @@
   "portBool": "bool",
   "portJudgeValue": "判斷值",
   "portSub": "次要{index}",
-  "@portSub": {"placeholders": {"index": {"type": "String"}}},
+  "@portSub": {
+    "placeholders": {
+      "index": {
+        "type": "String"
+      }
+    }
+  },
   "canvasHint": "點擊或拖曳到畫布",
   "currentValue": "目前值",
   "currentResult": "目前結果",
@@ -43,14 +51,26 @@
   "close": "關閉",
   "refresh": "重新整理",
   "refreshCooldown": "{seconds} 秒後可再次重新整理",
-  "@refreshCooldown": {"placeholders": {"seconds": {"type": "int"}}},
+  "@refreshCooldown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "clickEditOutput": "點擊編輯輸出設定",
   "clickAddPort": "點擊新增輸入埠（可直接填數值當成常數使用）；連線到此點也會自動新增",
   "triggerOnlyOne": "每個畫布只能有一個觸發節點",
   "connected": "連線",
   "value": "數值",
   "simulatedValue": "模擬值 {value}",
-  "@simulatedValue": {"placeholders": {"value": {"type": "String"}}},
+  "@simulatedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "emptyValue": "空",
   "gvKindConstant": "常數",
   "gvKindVariable": "變數",
@@ -83,6 +103,76 @@
   "readSource": "讀取來源",
   "nodeConfig": "節點設定",
   "zoomHint": "縮放提示",
+  "debugDragIntoCanvas": "拖曳入畫布:\nfeedback 全域: ({fx}, {fy})\n節點(世界): ({nx}, {ny})",
+  "@debugDragIntoCanvas": {
+    "placeholders": {
+      "fx": {
+        "type": "String"
+      },
+      "fy": {
+        "type": "String"
+      },
+      "nx": {
+        "type": "String"
+      },
+      "ny": {
+        "type": "String"
+      }
+    },
+    "fx": {
+      "type": "String"
+    },
+    "fy": {
+      "type": "String"
+    },
+    "nx": {
+      "type": "String"
+    },
+    "ny": {
+      "type": "String"
+    }
+  },
+  "debugWheelZoom": "滾輪縮放: factor={factor}\n指標全域: ({px}, {py})\nscale={scale} pan=({panX}, {panY})",
+  "@debugWheelZoom": {
+    "placeholders": {
+      "factor": {
+        "type": "String"
+      },
+      "px": {
+        "type": "String"
+      },
+      "py": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      },
+      "panX": {
+        "type": "String"
+      },
+      "panY": {
+        "type": "String"
+      }
+    },
+    "factor": {
+      "type": "String"
+    },
+    "px": {
+      "type": "String"
+    },
+    "py": {
+      "type": "String"
+    },
+    "scale": {
+      "type": "String"
+    },
+    "panX": {
+      "type": "String"
+    },
+    "panY": {
+      "type": "String"
+    }
+  },
   "decimalPlaces": "小數點精度",
   "apply": "套用",
   "cancel": "取消",
@@ -117,14 +207,64 @@
   "validateNumber": "請輸入有效數字",
   "validateFormula": "公式格式無效",
   "noActions": "未設定執行動作",
+  "countIncrement": "遞增",
+  "countDecrement": "遞減",
+  "notConfigured": "未設定",
+  "noFormula": "無公式",
+  "deviceParamSummary": "裝置 {sn} / {pid}",
+  "@deviceParamSummary": {
+    "placeholders": {
+      "sn": {
+        "type": "String"
+      },
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
   "conditionSatisfied": "條件滿足",
   "conditionNotSatisfied": "條件不滿足",
   "willExecute": "將執行",
   "willNotExecute": "不執行",
   "actionsCount": "{count} 個動作",
-  "@actionsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@actionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "emailAction": "郵件",
   "httpAction": "HTTP",
   "testBlockTitle": "{type}節點 · 測試結果",
-  "@testBlockTitle": {"placeholders": {"type": {"type": "String"}}}
+  "@testBlockTitle": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "copyResultWithInputs": "複製結果與輸入連線",
+  "nodeTitleConfig": "{title} 設定",
+  "@nodeTitleConfig": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "zoomIn": "放大",
+  "zoomOut": "縮小",
+  "resetView": "重設視口",
+  "configDelegated": "節點 {nodeId}：設定功能由消費方提供",
+  "@configDelegated": {
+    "placeholders": {
+      "nodeId": {
+        "type": "String"
+      }
+    }
+  },
+  "addInputPortHint": "點擊新增輸入埠（可直接填數值當成常數使用）；連線到此點也會自動新增",
+  "formulaHint": "例如：x * a + b",
+  "refreshIdle": "重新整理目前值（10 秒冷卻）"
 }

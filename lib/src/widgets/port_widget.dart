@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../controllers/flow_controller.dart';
+import '../i18n/gen/app_localizations.dart';
 import '../models/flow_node.dart';
 
 /// 埠圓點。輸入埠作為連線落點，輸出埠可拖曳建立連線。
@@ -51,7 +52,10 @@ class PortWidget extends StatelessWidget {
           cursor: SystemMouseCursors.precise,
           child: onTap == null
               ? _dot(isOutput)
-              : Tooltip(message: '點擊編輯輸出設定', child: _dot(isOutput)),
+              : Tooltip(
+                  message: AppLocalizations.of(context).clickEditOutput,
+                  child: _dot(isOutput),
+                ),
         ),
       );
     }

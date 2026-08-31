@@ -79,6 +79,46 @@
   "readSource": "Read Source",
   "nodeConfig": "Node Config",
   "zoomHint": "Zoom Hint",
+  "debugDragIntoCanvas": "Drag into canvas:\nfeedback global: ({fx}, {fy})\nnode (world): ({nx}, {ny})",
+  "@debugDragIntoCanvas": {
+    "placeholders": {
+      "fx": {
+        "type": "String"
+      },
+      "fy": {
+        "type": "String"
+      },
+      "nx": {
+        "type": "String"
+      },
+      "ny": {
+        "type": "String"
+      }
+    }
+  },
+  "debugWheelZoom": "Wheel zoom: factor={factor}\npointer global: ({px}, {py})\nscale={scale} pan=({panX}, {panY})",
+  "@debugWheelZoom": {
+    "placeholders": {
+      "factor": {
+        "type": "String"
+      },
+      "px": {
+        "type": "String"
+      },
+      "py": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      },
+      "panX": {
+        "type": "String"
+      },
+      "panY": {
+        "type": "String"
+      }
+    }
+  },
   "decimalPlaces": "Decimal Places",
   "apply": "Apply",
   "cancel": "Cancel",
@@ -113,6 +153,21 @@
   "validateNumber": "Please enter a valid number",
   "validateFormula": "Invalid formula format",
   "noActions": "No actions configured",
+  "countIncrement": "Increment",
+  "countDecrement": "Decrement",
+  "notConfigured": "Not configured",
+  "noFormula": "No formula",
+  "deviceParamSummary": "Device {sn} / {pid}",
+  "@deviceParamSummary": {
+    "placeholders": {
+      "sn": {
+        "type": "String"
+      },
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
   "conditionSatisfied": "Condition satisfied",
   "conditionNotSatisfied": "Condition not satisfied",
   "willExecute": "Will execute",
@@ -120,5 +175,28 @@
   "actionsCount": "{count} actions",
   "emailAction": "Email",
   "httpAction": "HTTP",
-  "testBlockTitle": "{type} Node · Test Result"
+  "testBlockTitle": "{type} Node · Test Result",
+  "copyResultWithInputs": "Copy result & input connections",
+  "nodeTitleConfig": "{title} Settings",
+  "@nodeTitleConfig": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "resetView": "Reset view",
+  "configDelegated": "Node {nodeId}: configuration is provided by the host app",
+  "@configDelegated": {
+    "placeholders": {
+      "nodeId": {
+        "type": "String"
+      }
+    }
+  },
+  "addInputPortHint": "Click to add an input port (can be filled with a constant); connecting here also auto-adds one",
+  "formulaHint": "e.g. x * a + b",
+  "refreshIdle": "Refresh current value (10s cooldown)"
 }

@@ -79,6 +79,46 @@
   "readSource": "読み取り元",
   "nodeConfig": "ノード設定",
   "zoomHint": "ズームヒント",
+  "debugDragIntoCanvas": "キャンバスへドラッグ:\nfeedback グローバル: ({fx}, {fy})\nノード(ワールド): ({nx}, {ny})",
+  "@debugDragIntoCanvas": {
+    "placeholders": {
+      "fx": {
+        "type": "String"
+      },
+      "fy": {
+        "type": "String"
+      },
+      "nx": {
+        "type": "String"
+      },
+      "ny": {
+        "type": "String"
+      }
+    }
+  },
+  "debugWheelZoom": "ホイールズーム: factor={factor}\nポインターグローバル: ({px}, {py})\nscale={scale} pan=({panX}, {panY})",
+  "@debugWheelZoom": {
+    "placeholders": {
+      "factor": {
+        "type": "String"
+      },
+      "px": {
+        "type": "String"
+      },
+      "py": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      },
+      "panX": {
+        "type": "String"
+      },
+      "panY": {
+        "type": "String"
+      }
+    }
+  },
   "decimalPlaces": "小数点桁数",
   "apply": "適用",
   "cancel": "キャンセル",
@@ -113,6 +153,21 @@
   "validateNumber": "有効な数値を入力してください",
   "validateFormula": "数式の形式が無効です",
   "noActions": "実行アクションが設定されていません",
+  "countIncrement": "増加",
+  "countDecrement": "減少",
+  "notConfigured": "未設定",
+  "noFormula": "式なし",
+  "deviceParamSummary": "デバイス {sn} / {pid}",
+  "@deviceParamSummary": {
+    "placeholders": {
+      "sn": {
+        "type": "String"
+      },
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
   "conditionSatisfied": "条件を満たしています",
   "conditionNotSatisfied": "条件を満たしていません",
   "willExecute": "実行されます",
@@ -120,5 +175,28 @@
   "actionsCount": "{count} 個のアクション",
   "emailAction": "メール",
   "httpAction": "HTTP",
-  "testBlockTitle": "{type}ノード · テスト結果"
+  "testBlockTitle": "{type}ノード · テスト結果",
+  "copyResultWithInputs": "結果と入力接続をコピー",
+  "nodeTitleConfig": "{title} 設定",
+  "@nodeTitleConfig": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "zoomIn": "拡大",
+  "zoomOut": "縮小",
+  "resetView": "ビューをリセット",
+  "configDelegated": "ノード {nodeId}：設定機能は提供元アプリが提供します",
+  "@configDelegated": {
+    "placeholders": {
+      "nodeId": {
+        "type": "String"
+      }
+    }
+  },
+  "addInputPortHint": "クリックで入力ポートを追加（定数を直接入力可）；ここに接続しても自動追加されます",
+  "formulaHint": "例：x * a + b",
+  "refreshIdle": "現在値を再取得（10 秒クールダウン）"
 }

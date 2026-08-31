@@ -9,7 +9,6 @@ import '../models/flow_node.dart';
 import '../models/flow_snapshot.dart';
 import '../models/global_value.dart';
 
-
 // ---------------------------------------------------------------------------
 // 外部資料提供者介面（由消費方實作）
 // ---------------------------------------------------------------------------
@@ -94,13 +93,16 @@ class FlowController extends ChangeNotifier {
   FlowController({
     GlobalValueProvider? globalValues,
     DeviceValueProvider? deviceProvider,
+    BlockTestStrings? strings,
   }) : _globalValues = globalValues ?? DefaultGlobalValueProvider(),
-       _deviceProvider = deviceProvider;
+       _deviceProvider = deviceProvider,
+       _strings = strings ?? const DefaultBlockTestStrings();
 
   // ---- 外部依賴 ----
 
   final GlobalValueProvider _globalValues;
   final DeviceValueProvider? _deviceProvider;
+  final BlockTestStrings _strings;
 
   /// 全域值提供者（常數／變數）。
   GlobalValueProvider get globalValues => _globalValues;
@@ -167,7 +169,6 @@ class FlowController extends ChangeNotifier {
   /// 正在拖曳的節點（用於邊框高亮）。
   String? draggingNodeId;
 
-
   // ---- 拖線預覽狀態 ----
 
   String? _draftFromNodeId;
@@ -195,19 +196,12 @@ class FlowController extends ChangeNotifier {
   // 座標轉換
   // ---------------------------------------------------------------------------
 
-
-  // ---------------------------------------------------------------------------
-  // 座標轉換
-  // ---------------------------------------------------------------------------
-
   /// 螢幕座標 -> 世界座標。
   Offset screenToWorld(Offset screen) =>
       (screen - canvasOrigin - panOffset) / scale;
 
-
   /// 世界座標 -> 畫布局部座標（用於定位節點 Widget）。
   Offset worldToCanvas(Offset world) => world * scale + panOffset;
-
 
   // ---------------------------------------------------------------------------
   // 視口操作
@@ -219,7 +213,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 以 [focus] 為焦點縮放視口。
   void zoomAt(double factor, Offset focus) {
     final oldScale = scale;
@@ -230,7 +223,6 @@ class FlowController extends ChangeNotifier {
     }
   }
 
-
   /// 重設視口（回到初始狀態）。
   void resetView() {
     if (viewportSize == Size.zero) return;
@@ -239,7 +231,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   // ---------------------------------------------------------------------------
   // 節點操作
   // ---------------------------------------------------------------------------
@@ -247,7 +238,6 @@ class FlowController extends ChangeNotifier {
   /// 每個畫布只能有一個觸發節點（流程起點）。
   bool get hasTriggerNode =>
       nodes.values.any((n) => n.type == BlockType.trigger);
-
 
   /// 新增節點到畫布；觸發節點已存在時拒絕（返回 null，畫布只能有一個觸發節點）。
   FlowNode? addNode(BlockType type, Offset position) {
@@ -260,7 +250,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
     return node;
   }
-
 
   /// 刪除節點，同時清理相關連線。
   void removeNode(String id) {
@@ -283,7 +272,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 移動節點。
   void moveNode(String id, Offset position) {
     final node = nodes[id];
@@ -292,7 +280,6 @@ class FlowController extends ChangeNotifier {
     _isDirty = true;
     notifyListeners();
   }
-
 
   /// 更新節點的設定（判斷運算子、運算公式、組合邏輯、執行動作等），
   /// 並清理指向已不存在埠的連線（埠結構可能隨設定變化）。
@@ -311,7 +298,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 更新某輸入埠的內聯輸入值（節點中輸入框，如運算節點 x/a~i）。
   /// 埠已連線時以 from 傳值為準；空值表示未填寫。
   void updateInputValue(String nodeId, String portId, String value) {
@@ -326,7 +312,6 @@ class FlowController extends ChangeNotifier {
     _isDirty = true;
     notifyListeners();
   }
-
 
   // ---- 動態輸入埠 ----
 
@@ -344,7 +329,6 @@ class FlowController extends ChangeNotifier {
     return next;
   }
 
-
   /// 動態入口節點下一個可新增的輸入埠標籤（標籤池中最小空缺標號）；已滿返回 null。
   String? nextExtraInputLabel(String nodeId) {
     final node = nodes[nodeId];
@@ -354,7 +338,6 @@ class FlowController extends ChangeNotifier {
     }
     return null;
   }
-
 
   /// 動態入口節點「新增點」（最後一個可連線點）的世界座標；輸入已滿時返回 null。
   /// 連線落在此點會自動新增輸入埠並連到新埠。
@@ -376,7 +359,6 @@ class FlowController extends ChangeNotifier {
         );
   }
 
-
   /// 連線被刪除後清理動態入口節點的輸入埠：
   /// 目標埠不是恆在首埠、未填寫輸入框值、且不再有任何連線時，
   /// 自動刪除該埠；保留空缺標號，下次新增從空缺標號開始。
@@ -395,7 +377,6 @@ class FlowController extends ChangeNotifier {
     node.updateConfig(node.config);
   }
 
-
   /// 輸入埠的內聯輸入框是否應隱藏：
   /// 埠已連線、連線另一端實際傳出值且為數值時才隱藏（連線提供數值；
   /// 僅連了線但未傳出值的（如讀取節點無參數）不隱藏，仍需手動輸入）。
@@ -408,7 +389,6 @@ class FlowController extends ChangeNotifier {
           isNumberOutput(c.fromNodeId, c.fromPortId),
     );
   }
-
 
   /// 某節點的某輸出埠是否輸出數值（設計期依宣告型別推斷）。
   bool isNumberOutput(String nodeId, String portId) {
@@ -450,7 +430,6 @@ class FlowController extends ChangeNotifier {
     }
   }
 
-
   /// 判斷某埠的輸出是否為實際傳出值（非純流程下放）。
   bool _portOutputsValue(String nodeId, String portId) {
     final node = nodes[nodeId];
@@ -469,56 +448,12 @@ class FlowController extends ChangeNotifier {
     }
   }
 
-
   /// 指定埠在世界座標系中的圓心位置。
   Offset portPosition(String nodeId, String portId) {
     final node = nodes[nodeId];
     if (node == null) return Offset.zero;
     return node.position + node.portOffset(portId, fontScale);
   }
-
-
-  // ---------------------------------------------------------------------------
-  // 選取與互動
-  // ---------------------------------------------------------------------------
-
-  /// 選取節點（取消連線選取）。
-  void selectNode(String id) {
-    selectedNodeId = id;
-    selectedConnectionId = null;
-    notifyListeners();
-  }
-
-
-  /// 選取連線（取消節點選取）。
-  void selectConnection(String id) {
-    selectedConnectionId = id;
-    selectedNodeId = null;
-    notifyListeners();
-  }
-
-
-  /// 清除所有選取。
-  void clearSelection() {
-    selectedNodeId = null;
-    selectedConnectionId = null;
-    notifyListeners();
-  }
-
-
-  /// 設定滑鼠懸停節點。
-  void setHoverNode(String? id) {
-    hoveredNodeId = id;
-    notifyListeners();
-  }
-
-
-  /// 設定正在拖曳的節點。
-  void setDraggingNode(String? id) {
-    draggingNodeId = id;
-    notifyListeners();
-  }
-
 
   // ---------------------------------------------------------------------------
   // 連線操作
@@ -532,13 +467,11 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 更新拖線終點（世界座標）。
   void updateDraft(Offset world) {
     _draftEnd = world;
     notifyListeners();
   }
-
 
   /// 結束拖線：若命中輸入埠則建立連線。
   void endDraft(Offset world) {
@@ -553,7 +486,6 @@ class FlowController extends ChangeNotifier {
     cancelDraft();
   }
 
-
   /// 取消拖線。
   void cancelDraft() {
     _draftFromNodeId = null;
@@ -563,7 +495,6 @@ class FlowController extends ChangeNotifier {
     draftTargetPortId = null;
     notifyListeners();
   }
-
 
   /// 建立連線（含自動新增動態輸入埠、去重）。
   void _addConnection(String fromNodeId, String fromPortId, String toNodeId, String toPortId) {
@@ -594,7 +525,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// 刪除連線。
   void removeConnection(String id) {
     final conn = connections.where((c) => c.id == id).firstOrNull;
@@ -608,7 +538,6 @@ class FlowController extends ChangeNotifier {
     _isDirty = true;
     notifyListeners();
   }
-
 
   /// 命中測試：世界座標 [world] 是否落在某個輸入埠的範圍內。
   ({String nodeId, String portId})? _hitTestInputPort(Offset world) {
@@ -638,6 +567,42 @@ class FlowController extends ChangeNotifier {
     return bestDist < threshold ? best : null;
   }
 
+  // ---------------------------------------------------------------------------
+  // 選取與互動
+  // ---------------------------------------------------------------------------
+
+  /// 選取節點（取消連線選取）。
+  void selectNode(String id) {
+    selectedNodeId = id;
+    selectedConnectionId = null;
+    notifyListeners();
+  }
+
+  /// 選取連線（取消節點選取）。
+  void selectConnection(String id) {
+    selectedConnectionId = id;
+    selectedNodeId = null;
+    notifyListeners();
+  }
+
+  /// 清除所有選取。
+  void clearSelection() {
+    selectedNodeId = null;
+    selectedConnectionId = null;
+    notifyListeners();
+  }
+
+  /// 設定滑鼠懸停節點。
+  void setHoverNode(String? id) {
+    hoveredNodeId = id;
+    notifyListeners();
+  }
+
+  /// 設定正在拖曳的節點。
+  void setDraggingNode(String? id) {
+    draggingNodeId = id;
+    notifyListeners();
+  }
 
   // ---------------------------------------------------------------------------
   // 快照（序列化）
@@ -648,7 +613,6 @@ class FlowController extends ChangeNotifier {
     nodes: nodes.values.map((n) => n.toJson()).toList(),
     connections: connections.map((c) => c.toJson()).toList(),
   );
-
 
   /// 從快照載入畫布狀態（清除現有狀態）。
   void loadSnapshot(FlowSnapshot snapshot) {
@@ -678,7 +642,6 @@ class FlowController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   // ---------------------------------------------------------------------------
   // 節點求值（單節點測試）
   // ---------------------------------------------------------------------------
@@ -689,19 +652,17 @@ class FlowController extends ChangeNotifier {
     return result.output;
   }
 
-
   /// 測試單個節點：依當前邏輯與輸入值計算輸出。
   BlockTestResult testBlock(String nodeId) {
     return _evaluateBlock(nodeId);
   }
 
-
   BlockTestResult _evaluateBlock(String nodeId) {
     final node = nodes[nodeId];
     if (node == null) {
       return BlockTestResult(
-        outputText: '—',
-        errors: const ['節點不存在'],
+        outputText: _strings.noData,
+        errors: [_strings.nodeNotFound(nodeId)],
       );
     }
 
@@ -723,7 +684,6 @@ class FlowController extends ChangeNotifier {
     }
   }
 
-
   // ---- 觸發節點 ----
 
   BlockTestResult _evalTrigger(FlowNode node) {
@@ -739,7 +699,7 @@ class FlowController extends ChangeNotifier {
             return BlockTestResult(output: v, outputText: formatTestValue(v));
           }
         }
-        return BlockTestResult(outputText: '—（無資料）');
+        return BlockTestResult(outputText: _strings.noData);
       case 2:
         // 變數值
         if (cfg.triggerVariableId != null) {
@@ -751,19 +711,18 @@ class FlowController extends ChangeNotifier {
             );
           }
         }
-        return BlockTestResult(outputText: '—（無資料）');
+        return BlockTestResult(outputText: _strings.noData);
       case 3:
         // 時間觸發
         return BlockTestResult(
           output: false,
           outputText: 'false',
-          notes: ['時間觸發條件：${cfg.cronExpression ?? "未設定"}'],
+          notes: [_strings.timeTriggerCondition(cfg.cronExpression ?? _strings.cronNotSet)],
         );
       default:
-        return BlockTestResult(outputText: '未設定觸發條件');
+        return BlockTestResult(outputText: _strings.triggerNotSet);
     }
   }
-
 
   // ---- 讀取節點 ----
 
@@ -777,7 +736,7 @@ class FlowController extends ChangeNotifier {
           final v = _deviceProvider.valueOf(cfg.sourceSerial!, cfg.sourcePollutantId!);
           if (v != null) return BlockTestResult(output: v, outputText: formatTestValue(v));
         }
-        return BlockTestResult(outputText: '—（無資料）');
+        return BlockTestResult(outputText: _strings.noData);
       case 'constant':
       case 'variable':
         if (cfg.sourceGlobalValueId != null) {
@@ -789,12 +748,11 @@ class FlowController extends ChangeNotifier {
             );
           }
         }
-        return BlockTestResult(outputText: '—（無資料）');
+        return BlockTestResult(outputText: _strings.noData);
       default:
-        return BlockTestResult(outputText: '無參數');
+        return BlockTestResult(outputText: _strings.noSource);
     }
   }
-
 
   // ---- 計數器節點 ----
 
@@ -802,10 +760,9 @@ class FlowController extends ChangeNotifier {
     return BlockTestResult(
       output: 0,
       outputText: '0',
-      notes: ['計數器節點：設計期固定顯示 0（執行期由引擎維護）'],
+      notes: [_strings.counterNote],
     );
   }
-
 
   // ---- 判斷節點 ----
 
@@ -819,7 +776,7 @@ class FlowController extends ChangeNotifier {
     if (x == null) {
       return BlockTestResult(
         outputText: '—',
-        errors: ['x 輸入值不可為空'],
+        errors: [_strings.judgeXRequired],
       );
     }
 
@@ -828,7 +785,7 @@ class FlowController extends ChangeNotifier {
       if (a == null || b == null) {
         return BlockTestResult(
           outputText: '—',
-          errors: ['範圍模式需要 a 和 b 兩個值'],
+          errors: [_strings.judgeRangeAB],
         );
       }
       switch (cfg.judgeOperator) {
@@ -841,13 +798,19 @@ class FlowController extends ChangeNotifier {
         default:
           result = false;
       }
-      notes.add('判斷：$x ${cfg.judgeOperator} [$a, $b] → $result');
+      notes.add(_strings.judgeNote(
+        _fmtNum(x),
+        cfg.judgeOperator,
+        _fmtNum(a),
+        _fmtNum(b),
+        result.toString(),
+      ));
     } else {
       // 單值模式
       if (a == null) {
         return BlockTestResult(
           outputText: '—',
-          errors: ['單值模式需要 a 比較值'],
+          errors: [_strings.judgeSingleA],
         );
       }
       switch (cfg.judgeOperator) {
@@ -872,7 +835,12 @@ class FlowController extends ChangeNotifier {
         default:
           result = false;
       }
-      notes.add('判斷：$x ${cfg.judgeOperator} $a → $result');
+      notes.add(_strings.judgeNoteSingle(
+        _fmtNum(x),
+        cfg.judgeOperator,
+        _fmtNum(a),
+        result.toString(),
+      ));
     }
 
     return BlockTestResult(
@@ -881,7 +849,6 @@ class FlowController extends ChangeNotifier {
       notes: notes,
     );
   }
-
 
   // ---- 運算節點 ----
 
@@ -892,7 +859,7 @@ class FlowController extends ChangeNotifier {
     if (cfg.formula.isEmpty) {
       return BlockTestResult(
         outputText: '—',
-        errors: ['公式為空'],
+        errors: [_strings.calcFormulaEmpty],
       );
     }
 
@@ -909,7 +876,7 @@ class FlowController extends ChangeNotifier {
         if (formula.contains(port.id)) {
           vars[port.id] = 0;
           formula = formula.replaceAll(port.id, '0');
-          notes.add('${port.id} 未連線，視為 0');
+          notes.add(_strings.portUnconnectedZero(port.id));
         }
       }
     }
@@ -925,11 +892,10 @@ class FlowController extends ChangeNotifier {
     } catch (e) {
       return BlockTestResult(
         outputText: '—',
-        errors: ['公式計算錯誤：$e'],
+        errors: [_strings.calcError(e.toString())],
       );
     }
   }
-
 
   // ---- 組合判斷節點 ----
 
@@ -943,9 +909,9 @@ class FlowController extends ChangeNotifier {
       if (src != null) {
         final v = _resolveBoolean(sourceNodeId: src.nodeId, sourcePortId: src.portId);
         values.add(v);
-        notes.add('${port.id} ← ${src.nodeId}.${src.portId} = $v');
+        notes.add(_strings.portSource(port.id, src.nodeId, src.portId, v.toString()));
       } else {
-        notes.add('${port.id} 未連線，視為 false');
+        notes.add(_strings.portUnconnectedFalse(port.id));
         values.add(false);
       }
     }
@@ -972,7 +938,6 @@ class FlowController extends ChangeNotifier {
     );
   }
 
-
   // ---- 執行節點 ----
 
   BlockTestResult _evalExecute(FlowNode node) {
@@ -986,12 +951,12 @@ class FlowController extends ChangeNotifier {
       sourcePortId: 'trigger',
       resolveUpstream: true,
     );
-    notes.add('判斷值條件：$triggerValue');
+    notes.add(_strings.judgeValueCondition(triggerValue.toString()));
 
     if (cfg.actions.isEmpty) {
-      errors.add('未設定執行動作');
+      errors.add(_strings.actionsEmpty);
     } else {
-      notes.add('${cfg.actions.length} 個動作待執行');
+      notes.add(_strings.actionsPending(cfg.actions.length));
     }
 
     // 檢查次要條件
@@ -999,7 +964,7 @@ class FlowController extends ChangeNotifier {
       if (port.id == 'trigger') continue;
       final cond = cfg.secondaryConditions[port.id];
       if (cond != null && cond.isNotEmpty) {
-        notes.add('次要條件 $port.id：$cond');
+        notes.add(_strings.secondaryCondition(port.id, cond));
       }
     }
 
@@ -1010,7 +975,6 @@ class FlowController extends ChangeNotifier {
       errors: errors,
     );
   }
-
 
   // ---- 求值輔助方法 ----
 
@@ -1038,10 +1002,16 @@ class FlowController extends ChangeNotifier {
     return null;
   }
 
-
   /// 解析上游來源（追蹤連線）。
   ({String nodeId, String portId})? _resolveInputSource(
-
+      String nodeId, String portId) {
+    for (final c in connections) {
+      if (c.toNodeId == nodeId && c.toPortId == portId) {
+        return (nodeId: c.fromNodeId, portId: c.fromPortId);
+      }
+    }
+    return null;
+  }
 
   /// 解析上游節點某輸出埠的數值。
   double? _resolveNumeric({
@@ -1057,7 +1027,6 @@ class FlowController extends ChangeNotifier {
     if (v is String) return double.tryParse(v);
     return null;
   }
-
 
   /// 解析上游節點某輸出埠的布林值。
   bool _resolveBoolean({
@@ -1083,7 +1052,6 @@ class FlowController extends ChangeNotifier {
     return false;
   }
 
-
   /// 簡易數學表示式求值（支援 + - * / 和括號）。
   double _evalExpression(String expr) {
     // 清理空白
@@ -1092,7 +1060,6 @@ class FlowController extends ChangeNotifier {
     final tokens = _tokenize(expr);
     return _parseAddSub(tokens);
   }
-
 
   List<dynamic> _tokenize(String expr) {
     final tokens = <dynamic>[];
@@ -1122,7 +1089,6 @@ class FlowController extends ChangeNotifier {
     return tokens;
   }
 
-
   double _parseAddSub(List<dynamic> tokens) {
     var result = _parseMulDiv(tokens);
     while (tokens.isNotEmpty) {
@@ -1140,7 +1106,6 @@ class FlowController extends ChangeNotifier {
     return result;
   }
 
-
   double _parseMulDiv(List<dynamic> tokens) {
     var result = _parseAtom(tokens);
     while (tokens.isNotEmpty) {
@@ -1151,7 +1116,7 @@ class FlowController extends ChangeNotifier {
       } else if (op == '/') {
         tokens.removeAt(0);
         final divisor = _parseAtom(tokens);
-        if (divisor == 0) throw Exception('除數不可為 0');
+        if (divisor == 0) throw Exception(_strings.divisorZero);
         result /= divisor;
       } else {
         break;
@@ -1160,15 +1125,14 @@ class FlowController extends ChangeNotifier {
     return result;
   }
 
-
   double _parseAtom(List<dynamic> tokens) {
-    if (tokens.isEmpty) throw Exception('表示式不完整');
+    if (tokens.isEmpty) throw Exception(_strings.exprIncomplete);
     final first = tokens.removeAt(0);
     if (first is double) return first;
     if (first == '(') {
       final result = _parseAddSub(tokens);
       if (tokens.isEmpty || tokens.first != ')') {
-        throw Exception('缺少右括號');
+        throw Exception(_strings.missingRightParen);
       }
       tokens.removeAt(0);
       return result;
@@ -1176,16 +1140,24 @@ class FlowController extends ChangeNotifier {
     if (first == '-') {
       return -_parseAtom(tokens);
     }
-    throw Exception('無法解析：$first');
+    throw Exception(_strings.cannotParse(first.toString()));
   }
-
 
   /// 將字串解析為數值。
   double? _parseNumeric(String s) {
     return double.tryParse(s.trim());
   }
 
-// 釋放資源
+  /// 格式化數值用於判斷說明（整數省略小數點）。
+  String _fmtNum(double v) {
+    if (v == v.roundToDouble()) {
+      return v.round().toString();
+    }
+    return v.toString();
+  }
+
+  // ---------------------------------------------------------------------------
+  // 釋放資源
   // ---------------------------------------------------------------------------
 
 }

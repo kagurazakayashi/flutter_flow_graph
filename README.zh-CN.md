@@ -11,27 +11,27 @@
 
 **全平台支持：** Android · iOS · Web · Windows · macOS · Linux
 
-📖 [English](README.md) | [中文（繁體）](README.zh-TW.md) | [日本語](README.ja-JP.md)
+ [English](README.md) | [中文（繁體）](README.zh-TW.md) | [日本語](README.ja-JP.md)
 
 ## 特性
 
-- 🎨 **节点图编辑器** — 在无限画布上拖放、连接节点
-- 🧩 **7 种内置节点类型** — 触发、读取、计数器、判断、运算、组合判断、执行
-- 🔗 **贝塞尔曲线连线** — 按端口语义着色
-- 🔍 **无限画布** — 平移、缩放、网格背景与原点标记
-- 🧪 **单节点测试** — 独立评估每个节点
-- 🔄 **动态输入端口** — 运算/判断/组合判断/执行节点可自动增减输入端口
-- 💾 **快照序列化** — 完整的 JSON 导出/导入画布状态
-- 🎯 **零外部状态管理** — 纯 `ChangeNotifier`，无第三方依赖
-- 🌐 **多语言** — zh_TW（默认）、zh_CN、en、ja
-- 🔌 **提供者接口模式** — 通过 `GlobalValueProvider` 和 `DeviceValueProvider` 自定义后端
+- **节点图编辑器** — 在无限画布上拖放、连接节点
+- **7 种内置节点类型** — 触发、读取、计数器、判断、运算、组合判断、执行
+- **贝塞尔曲线连线** — 按端口语义着色
+- **无限画布** — 平移、缩放、网格背景与原点标记
+- **单节点测试** — 独立评估每个节点
+- **动态输入端口** — 运算/判断/组合判断/执行节点可自动增减输入端口
+- **快照序列化** — 完整的 JSON 导出/导入画布状态
+- **零外部状态管理** — 纯 `ChangeNotifier`，无第三方依赖
+- **多语言** — zh_TW（默认）、zh_CN、en、ja
+- **提供者接口模式** — 通过 `GlobalValueProvider` 和 `DeviceValueProvider` 自定义后端
 
 ## 快速开始
 
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_flow_graph: ^1.0.0
+ flutter_flow_graph: ^1.0.0
 ```
 
 ```dart
@@ -42,14 +42,14 @@ final controller = FlowController();
 
 // 布局：左侧面板 + 画布
 Row(
-  children: [
-    BlockPalette(
-      onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
-    ),
-    Expanded(
-      child: NodeCanvas(controller: controller),
-    ),
-  ],
+ children: [
+  BlockPalette(
+   onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
+  ),
+  Expanded(
+   child: NodeCanvas(controller: controller),
+  ),
+ ],
 )
 ```
 
@@ -59,8 +59,8 @@ Row(
 
 ```dart
 final controller = FlowController(
-  globalValues: MyGlobalValueProvider(),
-  deviceProvider: MyDeviceValueProvider(),
+ globalValues: MyGlobalValueProvider(),
+ deviceProvider: MyDeviceValueProvider(),
 );
 ```
 
@@ -68,16 +68,16 @@ final controller = FlowController(
 
 ```dart
 NodeCanvas(
-  controller: controller,
-  onNodeConfigRequested: (context, nodeId) {
-    showDialog(
-      context: context,
-      builder: (_) => MyCustomConfigDialog(
-        nodeId: nodeId,
-        controller: controller,
-      ),
-    );
-  },
+ controller: controller,
+ onNodeConfigRequested: (context, nodeId) {
+  showDialog(
+   context: context,
+   builder: (_) => MyCustomConfigDialog(
+    nodeId: nodeId,
+    controller: controller,
+   ),
+  );
+ },
 )
 ```
 

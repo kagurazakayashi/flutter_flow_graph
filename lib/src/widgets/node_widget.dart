@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controllers/flow_controller.dart';
+import '../i18n/gen/app_localizations.dart';
 import '../models/block_config.dart';
 import '../models/block_test.dart';
 import '../models/flow_node.dart';
@@ -26,6 +27,120 @@ class NodeWidget extends StatelessWidget {
     this.onExitTextInput,
     this.onConfigRequested,
   });
+
+  /// 依系統語言回傳節點型別標籤。
+  static String _localizedBlockLabel(BuildContext context, BlockType type) {
+    final l10n = AppLocalizations.of(context);
+    return switch (type) {
+      BlockType.trigger => l10n.blockTypeTrigger,
+      BlockType.read => l10n.blockTypeRead,
+      BlockType.counter => l10n.blockTypeCounter,
+      BlockType.judge => l10n.blockTypeJudge,
+      BlockType.calc => l10n.blockTypeCalc,
+      BlockType.composite => l10n.blockTypeComposite,
+      BlockType.execute => l10n.blockTypeExecute,
+    };
+  }
+
+  /// 依系統語言回傳節點型別簡述。
+  static String _localizedDescription(BuildContext context, BlockType type) {
+    final l10n = AppLocalizations.of(context);
+    return switch (type) {
+      BlockType.trigger => l10n.descTrigger,
+      BlockType.read => l10n.descRead,
+      BlockType.counter => l10n.descCounter,
+      BlockType.judge => l10n.descJudge,
+      BlockType.calc => l10n.descCalc,
+      BlockType.composite => l10n.descComposite,
+      BlockType.execute => l10n.descExecute,
+    };
+  }
+
+  /// 埠標籤地化：`in` → 流程、執行節點的 `trigger` → 判斷值、`p{n}` → 次要{n}；
+  /// 其餘（變數名 x/a/b/c、輸出 out/true/false/bool）保持原樣。
+  static String _localizedPortLabel(
+      BuildContext context, BlockType type, String portId) {
+    final l10n = AppLocalizations.of(context);
+    return switch ((type, portId)) {
+      (_, 'in') => l10n.portFlow,
+      (BlockType.execute, 'trigger') => l10n.portJudgeValue,
+      (BlockType.execute, final id) when id.startsWith('p') =>
+        l10n.portSub(id.substring(1)),
+      _ => portId,
+    };
+  }
+
+  /// 各種語言的內建節點標籤，用於相容舊版資料（title 為內建標籤時視為未自訂）。
+  static const List<String> _builtinLabels = [
+    // 繁體中文
+    '觸發', '讀取', '計數器', '判斷', '運算', '組合判斷', '執行',
+    // 簡體中文
+    '触发', '读取', '计数器', '判断', '运算', '组合判断', '执行',
+    // 英文
+    'Trigger', 'Read', 'Counter', 'Judge', 'Calc', 'Composite', 'Execute',
+    // 日文
+    'トリガー', '読み取り', 'カウンター', '判定', '計算', '組み合わせ判定', '実行',
+  ];
+
+  /// 取得節點顯示標題：未自訂（空或為內建標籤）時回傳在地化標籤，否則回傳自訂標題。
+  static String _displayTitle(BuildContext context, FlowNode node) {
+    final title = node.title.trim();
+    if (title.isEmpty || _builtinLabels.contains(title)) {
+      return _localizedBlockLabel(context, node.type);
+    }
+    return node.title;
+  }
+
+  /// 節點設定摘要條的地化文字（對應 models 層 [configSummary] 的 UI 呈現）。
+  /// [nameOf] 可選回呼，將全域值 ID 轉換為顯示名稱。
+  static String _localizedConfigSummary(BuildContext context, BlockType type,
+      BlockConfig config,
+      {String Function(int id)? nameOf}) {
+    final l10n = AppLocalizations.of(context);
+    switch (type) {
+      case BlockType.calc:
+        return config.formula.isEmpty ? l10n.noFormula : config.formula;
+      case BlockType.judge:
+        final mode =
+            config.judgeMode == 'range' ? l10n.rangeMode : l10n.singleMode;
+        return '$mode ${config.judgeOperator}';
+      case BlockType.composite:
+        return config.logic;
+      case BlockType.read:
+        switch (config.sourceType) {
+          case 'device_param':
+            final sn = config.sourceSerial ?? '';
+            final pid = config.sourcePollutantId?.toString() ?? '';
+            return l10n.deviceParamSummary(sn, pid);
+          case 'constant':
+          case 'variable':
+            final id = config.sourceGlobalValueId;
+            final name = id != null ? (nameOf?.call(id) ?? '$id') : '—';
+            return config.sourceType == 'constant'
+                ? '${l10n.constant} $name'
+                : '${l10n.variable} $name';
+          default:
+            return l10n.noSource;
+        }
+      case BlockType.trigger:
+        switch (config.triggerType) {
+          case 1:
+            return l10n.deviceValue;
+          case 2:
+            return l10n.variableValue;
+          case 3:
+            return l10n.timeTrigger;
+          default:
+            return l10n.notConfigured;
+        }
+      case BlockType.counter:
+        return config.countMode == 'increment'
+            ? '${l10n.countIncrement} ${config.countValue}'
+            : '${l10n.countDecrement} ${config.countValue}';
+      case BlockType.execute:
+        return l10n.actionsCount(config.actions.length);
+    }
+  }
 
   final FlowNode node;
   final FlowController controller;
@@ -194,14 +309,14 @@ class NodeWidget extends StatelessWidget {
         globalPos.dx,
         globalPos.dy,
       ),
-      items: const [
+      items: [
         PopupMenuItem(
           value: 'config',
           child: Row(
             children: [
-              Icon(Icons.settings_outlined, size: 18),
-              SizedBox(width: 8),
-              Text('設定...'),
+              const Icon(Icons.settings_outlined, size: 18),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context).config),
             ],
           ),
         ),
@@ -209,9 +324,9 @@ class NodeWidget extends StatelessWidget {
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline, size: 18),
-              SizedBox(width: 8),
-              Text('刪除'),
+              const Icon(Icons.delete_outline, size: 18),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context).delete),
             ],
           ),
         ),
@@ -264,7 +379,7 @@ class NodeWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  node.title.isEmpty ? builtinBlockTypeLabel(node.type) : node.title,
+                  _displayTitle(context, node),
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.bold,
@@ -274,7 +389,7 @@ class NodeWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  builtinBlockTypeDescription(node.type),
+                  _localizedDescription(context, node.type),
                   style: TextStyle(
                     color: Colors.black.withValues(alpha: 0.45),
                     fontSize: 11 * _fs,
@@ -291,7 +406,7 @@ class NodeWidget extends StatelessWidget {
               _openConfig(context);
             },
             child: Tooltip(
-              message: '設定',
+              message: AppLocalizations.of(context).config,
               child: Container(
                 width: 24,
                 height: 24,
@@ -323,7 +438,7 @@ class NodeWidget extends StatelessWidget {
           const SizedBox(width: 4),
           Expanded(
             child: Text(
-              configSummary(node.type, node.config),
+              _localizedConfigSummary(context, node.type, node.config),
               style: TextStyle(
                 fontSize: 11 * _fs,
                 color: Colors.black.withValues(alpha: 0.6),
@@ -401,7 +516,7 @@ class NodeWidget extends StatelessWidget {
       left: NodeMetrics.width(_fs) / 2 + 13,
       top: midY - 13,
       child: Tooltip(
-        message: '測試本節點：依目前邏輯與輸入值計算輸出',
+        message: AppLocalizations.of(context).testBlock,
         child: GestureDetector(
           onTap: () => _testBlock(context),
           child: Container(
@@ -426,7 +541,7 @@ class NodeWidget extends StatelessWidget {
 
   Widget _buildTestToastContent(BuildContext context, BlockTestResult result) {
     final color = builtinBlockTypeColor(node.type);
-    final copyText = _blockTestCopyText(result);
+    final copyText = _blockTestCopyText(context, result);
     return Material(
       color: Colors.white,
       elevation: 4,
@@ -444,7 +559,7 @@ class NodeWidget extends StatelessWidget {
                   Icon(Icons.science_outlined, size: 16, color: color),
                   const SizedBox(width: 6),
                   Text(
-                    '${node.title} · 測試結果',
+                    AppLocalizations.of(context).testBlockTitle(_displayTitle(context, node)),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -452,30 +567,32 @@ class NodeWidget extends StatelessWidget {
                   ),
                   const Spacer(),
                   IconButton(
-                    tooltip: '複製結果與輸入連線',
+                    tooltip: AppLocalizations.of(context).copyResultWithInputs,
                     icon: const Icon(Icons.copy, size: 16),
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: copyText));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('已複製'),
-                          duration: Duration(seconds: 1),
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context).copied),
+                          duration: const Duration(seconds: 1),
                         ),
                       );
                     },
                   ),
-                  const IconButton(
-                    tooltip: '關閉',
-                    icon: Icon(Icons.close, size: 18),
+                  IconButton(
+                    tooltip: AppLocalizations.of(context).close,
+                    icon: const Icon(Icons.close, size: 18),
                     visualDensity: VisualDensity.compact,
                     onPressed: BlockTestToast.hide,
                   ),
                 ],
               ),
               const Divider(height: 10),
-              _resultLine('輸出', result.outputText, emphasize: true),
-              for (final n in result.notes) _resultLine('說明', n),
+              _resultLine(AppLocalizations.of(context).output, result.outputText,
+                  emphasize: true),
+              for (final n in result.notes)
+                _resultLine(AppLocalizations.of(context).note, n),
               for (final e in result.errors)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
@@ -508,9 +625,9 @@ class NodeWidget extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '失敗來源',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context).failureSource,
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFFE65100),
@@ -537,24 +654,25 @@ class NodeWidget extends StatelessWidget {
     );
   }
 
-  String _blockTestCopyText(BlockTestResult result) {
+  String _blockTestCopyText(BuildContext context, BlockTestResult result) {
+    final l10n = AppLocalizations.of(context);
     final buf = StringBuffer()
-      ..writeln('測試${node.title}節點')
-      ..writeln('輸出：${result.outputText}');
+      ..writeln(l10n.testBlockTitle(_displayTitle(context, node)))
+      ..writeln('${l10n.output}：${result.outputText}');
     if (result.notes.isNotEmpty) {
-      buf.writeln('說明：');
+      buf.writeln('${l10n.note}：');
       for (final n in result.notes) {
         buf.writeln('  · $n');
       }
     }
     if (result.errors.isNotEmpty) {
-      buf.writeln('錯誤：');
+      buf.writeln('${l10n.error}：');
       for (final e in result.errors) {
         buf.writeln('  · $e');
       }
     }
     if (result.sources.isNotEmpty) {
-      buf.writeln('失敗來源：');
+      buf.writeln('${l10n.failureSource}：');
       for (final s in result.sources) {
         buf.writeln('  · $s');
       }
@@ -640,7 +758,8 @@ class NodeWidget extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(port.label, style: _portLabelStyle),
+                Text(_localizedPortLabel(context, node.type, port.id),
+                    style: _portLabelStyle),
                 if (hasBox) ...[
                   const SizedBox(width: 6),
                   if (showInput)
@@ -653,7 +772,7 @@ class NodeWidget extends StatelessWidget {
                     )
                   else
                     Text(
-                      '連線',
+                      AppLocalizations.of(context).connected,
                       style: TextStyle(
                         fontSize: 11,
                         color: color.withValues(alpha: 0.7),
@@ -669,7 +788,8 @@ class NodeWidget extends StatelessWidget {
           Positioned(
             left: inset + r + 4,
             top: y - 9,
-            child: Text(port.label, style: _portLabelStyle),
+            child: Text(_localizedPortLabel(context, node.type, port.id),
+                style: _portLabelStyle),
           ),
         );
       }
@@ -700,7 +820,7 @@ class NodeWidget extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(4),
               child: Tooltip(
-                message: '點擊新增輸入埠（可直接填數值當成常數使用）；連線到此點也會自動新增',
+                message: AppLocalizations.of(context).addInputPortHint,
                 child: AnimatedScale(
                   scale: addTarget ? 1.35 : 1.0,
                   duration: const Duration(milliseconds: 120),
@@ -768,7 +888,7 @@ class NodeWidget extends StatelessWidget {
           right: inset + r + 4,
           top: y - 9,
           child: Text(
-            port.label,
+            _localizedPortLabel(context, node.type, port.id),
             style: TextStyle(
               color: Colors.black.withValues(alpha: 0.6),
               fontSize: 11 * _fs,
@@ -875,7 +995,9 @@ class _CurrentResultRowState extends State<_CurrentResultRow> {
           Padding(
             padding: const EdgeInsets.only(left: 14),
             child: Text(
-              isRead ? '目前值' : '目前結果',
+              isRead
+                  ? AppLocalizations.of(context).currentValue
+                  : AppLocalizations.of(context).currentResult,
               style: TextStyle(
                 fontSize: 11 * fs,
                 color: Colors.black.withValues(alpha: 0.45),
@@ -910,7 +1032,9 @@ class _CurrentResultRowState extends State<_CurrentResultRow> {
     final cooling = _remaining > 0;
     final btnSize = 22 * fs.clamp(1.0, 1.4);
     return Tooltip(
-      message: cooling ? '$_remaining 秒後可再次重新整理' : '重新整理目前值（10 秒冷卻）',
+      message: cooling
+          ? AppLocalizations.of(context).refreshCooldown(_remaining)
+          : AppLocalizations.of(context).refreshIdle,
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
         onTap: cooling ? null : _refresh,
@@ -1001,7 +1125,7 @@ class _CalcInputFieldState extends State<_CalcInputField> {
             borderRadius: BorderRadius.circular(4),
             borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.15)),
           ),
-          hintText: '數值',
+          hintText: AppLocalizations.of(context).value,
         ),
         onChanged: (v) =>
             widget.controller.updateInputValue(widget.nodeId, widget.portId, v),
@@ -1057,28 +1181,28 @@ class _DefaultConfigDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('${node.title} 設定'),
+      title: Text(AppLocalizations.of(context).nodeTitleConfig(node.title)),
       content: SizedBox(
         width: 400,
-        child: _buildContent(),
+        child: _buildContent(context),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('關閉'),
+          child: Text(AppLocalizations.of(context).close),
         ),
       ],
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     switch (node.type) {
       case BlockType.calc:
         return TextField(
           controller: TextEditingController(text: node.config.formula),
-          decoration: const InputDecoration(
-            labelText: '計算公式',
-            hintText: '例如：x * a + b',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).calculationFormula,
+            hintText: AppLocalizations.of(context).formulaHint,
           ),
           onChanged: (v) {
             node.config.formula = v;
@@ -1091,10 +1215,15 @@ class _DefaultConfigDialog extends StatelessWidget {
           children: [
             DropdownButtonFormField<String>(
               initialValue: node.config.judgeMode,
-              decoration: const InputDecoration(labelText: '判斷模式'),
-              items: const [
-                DropdownMenuItem(value: 'range', child: Text('範圍')),
-                DropdownMenuItem(value: 'single', child: Text('單值')),
+              decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).judgeMode),
+              items: [
+                DropdownMenuItem(
+                    value: 'range',
+                    child: Text(AppLocalizations.of(context).rangeMode)),
+                DropdownMenuItem(
+                    value: 'single',
+                    child: Text(AppLocalizations.of(context).singleMode)),
               ],
               onChanged: (v) {
                 if (v == null) return;
@@ -1105,7 +1234,8 @@ class _DefaultConfigDialog extends StatelessWidget {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: node.config.judgeOperator,
-              decoration: const InputDecoration(labelText: '運算子'),
+              decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).judgeOperator),
               items: [
                 for (final o in node.config.judgeMode == 'range'
                     ? BlockConfig.rangeOperators
@@ -1123,7 +1253,8 @@ class _DefaultConfigDialog extends StatelessWidget {
       case BlockType.composite:
         return DropdownButtonFormField<String>(
           initialValue: node.config.logic,
-          decoration: const InputDecoration(labelText: '組合邏輯'),
+          decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).compositeLogic),
           items: const [
             DropdownMenuItem(value: 'AND', child: Text('AND')),
             DropdownMenuItem(value: 'OR', child: Text('OR')),
@@ -1136,8 +1267,9 @@ class _DefaultConfigDialog extends StatelessWidget {
           },
         );
       default:
+        // 其他節點型別無自訂配置，僅顯示節點標題作為提示。
         return Text(
-          '${node.title} 的設定',
+          AppLocalizations.of(context).nodeTitleConfig(node.title),
           style: const TextStyle(color: Colors.black54),
         );
     }

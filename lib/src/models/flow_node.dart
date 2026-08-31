@@ -299,7 +299,7 @@ class FlowNode {
     List<NodePort>? outputs,
     BlockConfig? config,
   }) : config = config ?? BlockConfig(),
-       title = title ?? builtinBlockTypeLabel(type) {
+       title = title ?? '' {
     final cfg = this.config;
     this.inputs = inputs ?? buildInputPorts(type, cfg);
     this.outputs = outputs ?? buildOutputPorts(type, cfg);

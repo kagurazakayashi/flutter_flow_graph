@@ -11,27 +11,27 @@
 
 **全平台支援：** Android · iOS · Web · Windows · macOS · Linux
 
-📖 [English](README.md) | [中文（简体）](README.zh-CN.md) | [日本語](README.ja-JP.md)
+ [English](README.md) | [中文（简体）](README.zh-CN.md) | [日本語](README.ja-JP.md)
 
 ## 特性
 
-- 🎨 **節點圖編輯器** — 在無限畫布上拖放、連線節點
-- 🧩 **7 種內建節點型別** — 觸發、讀取、計數器、判斷、運算、組合判斷、執行
-- 🔗 **貝塞爾曲線連線** — 依埠語義著色（true 綠、false 紅、其餘灰藍）
-- 🔍 **無限畫布** — 平移、縮放、網格背景與原點標記
-- 🧪 **單節點測試** — 獨立評估每個節點
-- 🔄 **動態輸入埠** — 運算／判斷／組合判斷／執行節點可自動增減輸入埠
-- 💾 **快照序列化** — 完整的 JSON 匯出／匯入畫布狀態
-- 🎯 **零外部狀態管理** — 純 `ChangeNotifier`，無第三方依賴
-- 🌐 **多語言** — zh_TW（預設）、zh_CN、en、ja
-- 🔌 **提供者介面模式** — 透過 `GlobalValueProvider` 和 `DeviceValueProvider` 自訂後端
+- **節點圖編輯器** — 在無限畫布上拖放、連線節點
+- **7 種內建節點型別** — 觸發、讀取、計數器、判斷、運算、組合判斷、執行
+- **貝塞爾曲線連線** — 依埠語義著色（true 綠、false 紅、其餘灰藍）
+- **無限畫布** — 平移、縮放、網格背景與原點標記
+- **單節點測試** — 獨立評估每個節點
+- **動態輸入埠** — 運算／判斷／組合判斷／執行節點可自動增減輸入埠
+- **快照序列化** — 完整的 JSON 匯出／匯入畫布狀態
+- **零外部狀態管理** — 純 `ChangeNotifier`，無第三方依賴
+- **多語言** — zh_TW（預設）、zh_CN、en、ja
+- **提供者介面模式** — 透過 `GlobalValueProvider` 和 `DeviceValueProvider` 自訂後端
 
 ## 快速開始
 
 ```yaml
 # pubspec.yaml
 dependencies:
-  flutter_flow_graph: ^1.0.0
+ flutter_flow_graph: ^1.0.0
 ```
 
 ```dart
@@ -42,14 +42,14 @@ final controller = FlowController();
 
 // 佈局：左側面板 + 畫布
 Row(
-  children: [
-    BlockPalette(
-      onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
-    ),
-    Expanded(
-      child: NodeCanvas(controller: controller),
-    ),
-  ],
+ children: [
+  BlockPalette(
+   onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
+  ),
+  Expanded(
+   child: NodeCanvas(controller: controller),
+  ),
+ ],
 )
 ```
 
@@ -59,8 +59,8 @@ Row(
 
 ```dart
 final controller = FlowController(
-  globalValues: MyGlobalValueProvider(),
-  deviceProvider: MyDeviceValueProvider(),
+ globalValues: MyGlobalValueProvider(),
+ deviceProvider: MyDeviceValueProvider(),
 );
 ```
 
@@ -68,16 +68,16 @@ final controller = FlowController(
 
 ```dart
 NodeCanvas(
-  controller: controller,
-  onNodeConfigRequested: (context, nodeId) {
-    showDialog(
-      context: context,
-      builder: (_) => MyCustomConfigDialog(
-        nodeId: nodeId,
-        controller: controller,
-      ),
-    );
-  },
+ controller: controller,
+ onNodeConfigRequested: (context, nodeId) {
+  showDialog(
+   context: context,
+   builder: (_) => MyCustomConfigDialog(
+    nodeId: nodeId,
+    controller: controller,
+   ),
+  );
+ },
 )
 ```
 
@@ -85,17 +85,17 @@ NodeCanvas(
 
 ```dart
 BlockPalette(
-  onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
-  customBlockTypes: [
-    CustomPaletteBlockType(
-      label: 'HTTP 請求',
-      description: '發送 HTTP API 請求',
-      color: Colors.blue,
-      onTap: () {
-        // 自訂邏輯
-      },
-    ),
-  ],
+ onAddBlock: (type) => controller.addNode(type, Offset(0, 0)),
+ customBlockTypes: [
+  CustomPaletteBlockType(
+   label: 'HTTP 請求',
+   description: '發送 HTTP API 請求',
+   color: Colors.blue,
+   onTap: () {
+    // 自訂邏輯
+   },
+  ),
+ ],
 )
 ```
 

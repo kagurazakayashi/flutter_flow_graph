@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../controllers/editor_settings.dart';
 import '../controllers/flow_controller.dart';
+import '../i18n/gen/app_localizations.dart';
 import '../models/flow_node.dart';
 import 'node_widget.dart';
 
@@ -132,13 +133,10 @@ Color _lineColor(FlowController controller, String portId) {
   }
 }
 
-/// 貝塞爾曲線取樣步數（命中測試精度與效能平衡）。
-const int _bezierSteps = 40;
-
 /// 在貝塞爾曲線上取樣若干點，用於命中測試（點擊連線選取）。
 List<Offset> bezierPoints(Offset from, Offset to) {
   final dx = math.max((to.dx - from.dx).abs() * 0.5, 50.0);
-  const steps = _bezierSteps;
+  const steps = 40;
   final pts = <Offset>[];
   for (var i = 0; i <= steps; i++) {
     final t = i / steps;
@@ -306,9 +304,9 @@ class _NodeCanvasState extends State<NodeCanvas> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('每個畫布只能有一個觸發節點（流程起點）'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).triggerOnlyOne),
+            duration: const Duration(seconds: 2),
           ),
         );
       return;
@@ -316,9 +314,12 @@ class _NodeCanvasState extends State<NodeCanvas> {
 
     if (widget.settings?.showZoomHint ?? false) {
       _showDebugSnackBar(
-        '拖曳入畫布:\n'
-        'feedback全域: (${details.offset.dx.toStringAsFixed(0)}, ${details.offset.dy.toStringAsFixed(0)})\n'
-        '節點(世界): (${pos.dx.toStringAsFixed(0)}, ${pos.dy.toStringAsFixed(0)})',
+        AppLocalizations.of(context).debugDragIntoCanvas(
+          details.offset.dx.toStringAsFixed(0),
+          details.offset.dy.toStringAsFixed(0),
+          pos.dx.toStringAsFixed(0),
+          pos.dy.toStringAsFixed(0),
+        ),
       );
     }
   }
@@ -331,7 +332,7 @@ class _NodeCanvasState extends State<NodeCanvas> {
           duration: const Duration(seconds: 8),
           content: Text(text),
           action: SnackBarAction(
-            label: '複製',
+            label: AppLocalizations.of(context).copy,
             onPressed: () {
               Clipboard.setData(ClipboardData(text: text));
             },
@@ -354,9 +355,14 @@ class _NodeCanvasState extends State<NodeCanvas> {
 
           if (widget.settings?.showZoomHint ?? false) {
             _showDebugSnackBar(
-              '滾輪縮放: factor=${factor.toStringAsFixed(4)}\n'
-              '指標全域: (${pointerGlobal.dx.toStringAsFixed(0)}, ${pointerGlobal.dy.toStringAsFixed(0)})\n'
-              'scale=${controller.scale.toStringAsFixed(3)} pan=(${controller.panOffset.dx.toStringAsFixed(0)}, ${controller.panOffset.dy.toStringAsFixed(0)})',
+              AppLocalizations.of(context).debugWheelZoom(
+                factor.toStringAsFixed(4),
+                pointerGlobal.dx.toStringAsFixed(0),
+                pointerGlobal.dy.toStringAsFixed(0),
+                controller.scale.toStringAsFixed(3),
+                controller.panOffset.dx.toStringAsFixed(0),
+                controller.panOffset.dy.toStringAsFixed(0),
+              ),
             );
           }
         }
@@ -424,14 +430,14 @@ class _NodeCanvasState extends State<NodeCanvas> {
         globalPos.dx,
         globalPos.dy,
       ),
-      items: const [
+      items: [
         PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline, size: 18),
-              SizedBox(width: 8),
-              Text('刪除'),
+              const Icon(Icons.delete_outline, size: 18),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context).delete),
             ],
           ),
         ),

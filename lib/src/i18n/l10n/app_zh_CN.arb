@@ -79,6 +79,46 @@
   "readSource": "读取来源",
   "nodeConfig": "节点配置",
   "zoomHint": "缩放提示",
+  "debugDragIntoCanvas": "拖曳入画布:\nfeedback 全局: ({fx}, {fy})\n节点(世界): ({nx}, {ny})",
+  "@debugDragIntoCanvas": {
+    "placeholders": {
+      "fx": {
+        "type": "String"
+      },
+      "fy": {
+        "type": "String"
+      },
+      "nx": {
+        "type": "String"
+      },
+      "ny": {
+        "type": "String"
+      }
+    }
+  },
+  "debugWheelZoom": "滚轮缩放: factor={factor}\n指针全局: ({px}, {py})\nscale={scale} pan=({panX}, {panY})",
+  "@debugWheelZoom": {
+    "placeholders": {
+      "factor": {
+        "type": "String"
+      },
+      "px": {
+        "type": "String"
+      },
+      "py": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      },
+      "panX": {
+        "type": "String"
+      },
+      "panY": {
+        "type": "String"
+      }
+    }
+  },
   "decimalPlaces": "小数点精度",
   "apply": "应用",
   "cancel": "取消",
@@ -113,6 +153,21 @@
   "validateNumber": "请输入有效数字",
   "validateFormula": "公式格式无效",
   "noActions": "未配置执行动作",
+  "countIncrement": "递增",
+  "countDecrement": "递减",
+  "notConfigured": "未设置",
+  "noFormula": "无公式",
+  "deviceParamSummary": "装置 {sn} / {pid}",
+  "@deviceParamSummary": {
+    "placeholders": {
+      "sn": {
+        "type": "String"
+      },
+      "pid": {
+        "type": "String"
+      }
+    }
+  },
   "conditionSatisfied": "条件满足",
   "conditionNotSatisfied": "条件不满足",
   "willExecute": "将执行",
@@ -120,5 +175,28 @@
   "actionsCount": "{count} 个动作",
   "emailAction": "邮件",
   "httpAction": "HTTP",
-  "testBlockTitle": "{type}节点 · 测试结果"
+  "testBlockTitle": "{type}节点 · 测试结果",
+  "copyResultWithInputs": "复制结果与输入连线",
+  "nodeTitleConfig": "{title} 设置",
+  "@nodeTitleConfig": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "zoomIn": "放大",
+  "zoomOut": "缩小",
+  "resetView": "重置视口",
+  "configDelegated": "节点 {nodeId}：设置功能由使用方提供",
+  "@configDelegated": {
+    "placeholders": {
+      "nodeId": {
+        "type": "String"
+      }
+    }
+  },
+  "addInputPortHint": "点击新增输入端口（可直接填数值当常数使用）；连线到此点也会自动新增",
+  "formulaHint": "例如：x * a + b",
+  "refreshIdle": "刷新当前值（10 秒冷却）"
 }
